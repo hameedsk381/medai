@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Optional, List, Dict
 from sqlalchemy import select, func, desc
 from app.database import AsyncSessionLocal, TaskDB, CallLogDB, FailureLogDB
+from ..utils.safe_print import safe_print as print
 
 
 class TaskService:
@@ -63,7 +64,7 @@ class TaskService:
             await session.commit()
             
             return {
-                "id": task.id,
+                "task_id": task.id,
                 "intent": task.intent,
                 "issue": task.issue,
                 "urgency": task.urgency,
@@ -197,7 +198,8 @@ class TaskService:
             }
     
     async def get_dashboard_stats(self, business_id: str) -> Dict:
-        """Get dashboard statistics"""
+        """Get dashboard statistics including medical stats"""
+        from app.database import AppointmentDB, PatientDB
         
         async with AsyncSessionLocal() as session:
             # Total calls
@@ -227,6 +229,17 @@ class TaskService:
             )
             failures = failures_result.scalar() or 0
             
+            # Medical Stats
+            appointments_result = await session.execute(
+                select(func.count(AppointmentDB.id)).where(AppointmentDB.business_id == business_id)
+            )
+            appointments_count = appointments_result.scalar() or 0
+            
+            patients_result = await session.execute(
+                select(func.count(PatientDB.id)).where(PatientDB.business_id == business_id)
+            )
+            patients_count = patients_result.scalar() or 0
+            
             # Success rate
             success_rate = (tasks_created / total_calls * 100) if total_calls > 0 else 0
             
@@ -235,6 +248,8 @@ class TaskService:
                 "tasks_created": tasks_created,
                 "escalations": escalations,
                 "failures": failures,
+                "appointments_count": appointments_count,
+                "patients_count": patients_count,
                 "success_rate": round(success_rate, 2)
             }
     

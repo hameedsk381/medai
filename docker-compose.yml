@@ -5,6 +5,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
     volumes:
       - ./backend/data:/app/data
     env_file:
@@ -19,6 +21,8 @@ services:
       dockerfile: Dockerfile
       args:
         - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    ports:
+      - "3000:3000"
     depends_on:
       - backend
     env_file:
@@ -33,6 +37,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-receptionist_db}
     volumes:
       - pg-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
     restart: always
 
 volumes:

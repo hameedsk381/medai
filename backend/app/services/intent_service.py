@@ -6,6 +6,7 @@ import os
 import json
 from typing import Dict, Optional
 from groq import AsyncGroq
+from ..utils.safe_print import safe_print as print
 
 
 class IntentService:
@@ -20,15 +21,12 @@ class IntentService:
         self.client = AsyncGroq(api_key=api_key) if api_key else None
     
     SUPPORTED_INTENTS = [
-        "AC Repair",
-        "Plumbing",
-        "Electrical",
-        "General Maintenance",
-        "Clinic Appointment",
-        "Property Inspection",
-        "Pest Control",
-        "Painting",
-        "Carpentry",
+        "Prescription Renewal",
+        "Symptom Triage",
+        "Test Results Inquiry",
+        "Nurse Callback",
+        "Booking Appointment",
+        "General Inquiry",
         "Other"
     ]
     
@@ -58,25 +56,27 @@ class IntentService:
                 "confidence": 0.0
             }
         
-        system_prompt = f"""You are an AI assistant for a local service business intake system.
-Your job is to analyze customer voice transcripts and extract structured information.
+        system_prompt = f"""You are an AI assistant for a medical clinic intake system.
+Your job is to analyze patient voice transcripts and extract structured information.
 
-SUPPORTED SERVICE CATEGORIES:
+Note: The transcript may include speaker labels like "SPEAKER_00" and "SPEAKER_01" if it is a phone call.
+
+SUPPORTED MEDICAL CATEGORIES:
 {', '.join(self.SUPPORTED_INTENTS)}
 
 Extract the following:
-1. Intent: Which service category does this relate to?
-2. Issue: What is the specific problem/request?
+1. Intent: Which medical workflow category does this relate to?
+2. Issue: What is the specific problem, symptom, or request?
 3. Urgency: How urgent is this? (low, medium, high, critical)
-4. Location: Where is the service needed? (extract if mentioned)
-5. Preferred Time: When do they want service? (extract if mentioned)
+4. Location: Where is the patient located or which clinic branch? (extract if mentioned)
+5. Preferred Time: When do they want an appointment or callback? (extract if mentioned)
 6. Confidence: How confident are you in this extraction? (0.0 to 1.0)
 
 URGENCY GUIDELINES:
-- Critical: Emergency, immediate danger, complete outage
-- High: Problem affecting daily life, needs same-day attention
-- Medium: Inconvenient but not urgent, can wait 1-2 days
-- Low: Routine request, can be scheduled flexibly
+- Critical: Emergency symptoms (chest pain, severe bleeding), call 911 immediately
+- High: Severe discomfort or urgent medication refill needed today
+- Medium: Moderate symptoms, needs attention within 1-2 days
+- Low: Routine request, general inquiry, flexible appointment
 
 Return ONLY a valid JSON object with these exact keys:
 {{"intent", "issue", "urgency", "location", "preferred_time", "confidence"}}

@@ -1,34 +1,48 @@
 import Link from 'next/link';
-import { Phone, Zap, CheckCircle, ArrowRight, BarChart3, Clock, Shield } from 'lucide-react';
+import {
+  Activity,
+  Calendar,
+  ShieldCheck,
+  ArrowRight,
+  ChevronRight,
+  Mic,
+  Search,
+  Lock,
+  Globe,
+  Zap,
+  Sparkles,
+  Command,
+  Cpu,
+  Fingerprint
+} from 'lucide-react';
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950">
+    <div className="min-h-screen selection:bg-primary/30 bg-background text-foreground">
+
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 glass">
+      <nav className="fixed top-0 w-full z-50 glass-nav">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/50">
-                <Phone className="w-6 h-6 text-white" />
+            <div className="flex items-center gap-2 group cursor-pointer">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
+                <Command className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold gradient-text">VoiceTask AI</span>
+              <span className="text-lg font-bold tracking-tight font-display">
+                MedVoice AI
+              </span>
             </div>
+
             <div className="hidden md:flex items-center gap-8">
-              <Link href="#features" className="text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition">
-                Features
-              </Link>
-              <Link href="#how-it-works" className="text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition">
-                How It Works
-              </Link>
-              <Link href="#pricing" className="text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition">
-                Pricing
-              </Link>
+              <Link href="#solutions" className="text-sm font-medium text-muted-foreground hover:text-white transition-colors">Features</Link>
+              <Link href="#compliance" className="text-sm font-medium text-muted-foreground hover:text-white transition-colors">Security</Link>
+
               <Link
                 href="/dashboard"
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold hover:shadow-lg hover:shadow-indigo-500/50 transition-all duration-300"
+                className="btn-premium px-5 py-2 text-sm"
               >
-                Dashboard
+                Access Portal
+                <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
           </div>
@@ -36,240 +50,180 @@ export default function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center max-w-4xl mx-auto animate-fade-in">
-            <div className="inline-block mb-6">
-              <span className="px-4 py-2 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-sm font-semibold border border-indigo-200 dark:border-indigo-800">
-                🚀 AI-Powered Voice Intelligence
-              </span>
-            </div>
+      <section className="relative pt-48 pb-32 px-6 overflow-hidden">
+        <div className="max-w-5xl mx-auto text-center space-y-8 fade-in">
 
-            <h1 className="text-6xl md:text-7xl font-extrabold mb-6 leading-tight">
-              Never Miss a <br />
-              <span className="gradient-text">Customer Call</span> Again
-            </h1>
+          <div className="inline-flex items-center justify-center">
+            <span className="badge-premium animate-pulse">
+              <Sparkles className="w-3 h-3 mr-2 inline" />
+              The Future of Clinical Operations
+            </span>
+          </div>
 
-            <p className="text-xl text-slate-600 dark:text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
-              AI voice receptionist that answers calls instantly, understands customer needs,
-              and converts conversations into structured action items—24/7.
-            </p>
+          <h1 className="text-6xl md:text-8xl font-display leading-[1.1] tracking-tight">
+            The New Standard in <br />
+            <span className="text-gradient font-extrabold">Neural Medical Intake</span>
+          </h1>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                href="/dashboard"
-                className="group px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-lg hover:shadow-2xl hover:shadow-indigo-500/50 transition-all duration-300 flex items-center gap-2"
-              >
-                Get Started Free
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link
-                href="#demo"
-                className="px-8 py-4 rounded-xl border-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold text-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all duration-300"
-              >
-                Watch Demo
-              </Link>
-            </div>
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            MedVoice AI orchestrates enterprise-grade clinical coordination, handling intake, scheduling, and protocol management with a sub-second neural pipeline.
+          </p>
 
-            {/* Stats */}
-            <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[
-                { label: 'Calls Answered', value: '10K+', icon: Phone },
-                { label: 'Tasks Created', value: '8.5K+', icon: CheckCircle },
-                { label: 'Success Rate', value: '95%', icon: Zap }
-              ].map((stat, i) => (
-                <div key={i} className="p-6 rounded-2xl bg-white dark:bg-slate-800 shadow-lg border border-slate-200 dark:border-slate-700">
-                  <stat.icon className="w-8 h-8 text-indigo-600 dark:text-indigo-400 mx-auto mb-2" />
-                  <div className="text-3xl font-extrabold gradient-text">{stat.value}</div>
-                  <div className="text-slate-600 dark:text-slate-400 font-medium">{stat.label}</div>
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-6">
+            <Link href="/dashboard" className="btn-premium px-8 py-4 text-lg">
+              Launch Console
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+            <button className="btn-secondary px-8 py-4 text-lg">
+              Book a Demo
+            </button>
+          </div>
+
+          {/* User Feedback Preview */}
+          <div className="pt-20 flex flex-col items-center gap-4 animate-float">
+            <div className="flex -space-x-3">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="w-10 h-10 rounded-full border-2 border-background bg-muted ring-2 ring-primary/20">
+                  <img src={`https://i.pravatar.cc/100?u=${i + 20}`} alt="User" className="rounded-full" />
                 </div>
               ))}
+              <div className="w-10 h-10 rounded-full border-2 border-background bg-muted flex items-center justify-center text-[10px] font-bold ring-2 ring-primary/20">
+                +42
+              </div>
             </div>
+            <p className="text-xs font-medium text-muted-foreground tracking-widest uppercase">
+              Operational in over 200+ medical units
+            </p>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 px-6 bg-white dark:bg-slate-900/50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-5xl font-extrabold mb-4">
-              Built for <span className="gradient-text">Service Businesses</span>
-            </h2>
-            <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-              Stop losing revenue from missed calls. Let AI handle intake while you focus on execution.
-            </p>
+      <section id="solutions" className="py-32 px-6 relative">
+        <div className="max-w-7xl mx-auto space-y-12">
+          <div className="text-center space-y-4">
+            <h2 className="text-4xl md:text-5xl font-display">Powered by Precision.</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">Our stack combines sovereign LLMs with ultra-low latency inference to provide an experience that feels like magic.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                icon: Phone,
-                title: 'Instant Call Answering',
-                description: 'AI answers every call in under 2 seconds. No waiting, no missed opportunities.',
-                color: 'from-blue-500 to-cyan-500'
-              },
-              {
-                icon: Zap,
-                title: 'Smart Intent Extraction',
-                description: 'Understands customer needs and categorizes service requests automatically.',
-                color: 'from-indigo-500 to-purple-500'
-              },
-              {
-                icon: CheckCircle,
-                title: 'Structured Task Creation',
-                description: 'Converts conversations into actionable tasks with all details captured.',
-                color: 'from-purple-500 to-pink-500'
-              },
-              {
-                icon: BarChart3,
-                title: 'Real-time Dashboard',
-                description: 'Monitor all calls, tasks, and escalations from a single command center.',
-                color: 'from-green-500 to-emerald-500'
-              },
-              {
-                icon: Clock,
-                title: 'Auto-Escalation',
-                description: 'Low confidence or urgent cases escalate to humans automatically.',
-                color: 'from-orange-500 to-red-500'
-              },
-              {
-                icon: Shield,
-                title: 'Never Loses Context',
-                description: 'Full transcripts and confidence scores logged for every interaction.',
-                color: 'from-cyan-500 to-blue-500'
-              }
-            ].map((feature, i) => (
-              <div
-                key={i}
-                className="group p-8 rounded-2xl bg-slate-50 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 hover:shadow-xl transition-all duration-300"
-              >
-                <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg`}>
-                  <feature.icon className="w-7 h-7 text-white" />
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{feature.title}</h3>
-                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{feature.description}</p>
-              </div>
-            ))}
+          <div className="grid md:grid-cols-3 gap-6">
+            <FeatureCard
+              icon={Mic}
+              title="Real-time Intent"
+              desc="Sub-500ms speech-to-intent pipeline using Groq LPU acceleration."
+            />
+            <FeatureCard
+              icon={Calendar}
+              title="Smart Scheduling"
+              desc="Direct EHR integration for autonomous appointment orchestration."
+            />
+            <FeatureCard
+              icon={Cpu}
+              title="Clinical RAG"
+              desc="Personalized knowledge base for clinic-specific medical protocols."
+            />
           </div>
         </div>
       </section>
 
-      {/* How It Works */}
-      <section id="how-it-works" className="py-20 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-5xl font-extrabold mb-4">
-              Simple <span className="gradient-text">3-Step Process</span>
-            </h2>
-            <p className="text-xl text-slate-600 dark:text-slate-400">
-              From call to task in seconds
+      {/* Security Section */}
+      <section id="compliance" className="py-32 px-6 bg-muted/50 border-y border-border">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+          <div className="space-y-8 text-left">
+            <div className="inline-block badge-premium">
+              Enterprise Grade
+            </div>
+            <h2 className="text-5xl font-display leading-tight">Fortified Security for <br />Patient Trust.</h2>
+            <p className="text-xl text-muted-foreground leading-relaxed">
+              We understand the critical nature of medical data. MedVoice AI is built from the ground up to exceed global compliance standards.
             </p>
+
+            <div className="space-y-4">
+              <SecurityItem icon={ShieldCheck} text="HIPAA & SOC2 Type II Compliant" />
+              <SecurityItem icon={Fingerprint} text="Advanced Biometric Authentication" />
+              <SecurityItem icon={Lock} text="End-to-End Interaction Encryption" />
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                step: '01',
-                title: 'Customer Calls',
-                description: 'AI answers instantly and engages in natural conversation to understand the request.'
-              },
-              {
-                step: '02',
-                title: 'AI Extracts Intent',
-                description: 'Identifies service type, urgency, location, and preferences with high accuracy.'
-              },
-              {
-                step: '03',
-                title: 'Task Created',
-                description: 'Structured task appears in dashboard. Team gets notified. You take action.'
-              }
-            ].map((step, i) => (
-              <div key={i} className="relative">
-                <div className="p-8 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg">
-                  <div className="text-6xl font-extrabold gradient-text mb-4">{step.step}</div>
-                  <h3 className="text-2xl font-bold mb-3 text-slate-900 dark:text-white">{step.title}</h3>
-                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{step.description}</p>
-                </div>
-                {i < 2 && (
-                  <div className="hidden md:block absolute top-1/2 -right-4 w-8 h-8">
-                    <ArrowRight className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-                  </div>
-                )}
+          <div className="relative">
+            <div className="cartesia-card p-0 overflow-hidden shadow-2xl shadow-primary/20 scale-105">
+              <div className="bg-muted p-4 border-b border-border flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500/20" />
+                <div className="w-3 h-3 rounded-full bg-amber-500/20" />
+                <div className="w-3 h-3 rounded-full bg-emerald-500/20" />
+                <div className="ml-4 h-4 w-32 bg-muted-foreground/10 rounded-full" />
               </div>
-            ))}
+              <div className="p-8 space-y-6">
+                <div className="h-4 w-3/4 bg-primary/20 rounded-full animate-pulse" />
+                <div className="h-4 w-1/2 bg-muted-foreground/10 rounded-full" />
+                <div className="h-24 w-full bg-muted-foreground/5 rounded-2xl" />
+                <div className="flex justify-end">
+                  <div className="h-10 w-24 bg-primary rounded-lg" />
+                </div>
+              </div>
+            </div>
+            {/* Decorative Elements */}
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/10 blur-3xl rounded-full" />
+            <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-secondary/10 blur-3xl rounded-full" />
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="p-12 rounded-3xl bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 text-white text-center shadow-2xl">
-            <h2 className="text-4xl md:text-5xl font-extrabold mb-6">
-              Ready to Transform Your Service Business?
-            </h2>
-            <p className="text-xl mb-8 text-indigo-100">
-              Join service businesses already using VoiceTask AI to capture every opportunity.
-            </p>
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 px-10 py-4 rounded-xl bg-white text-indigo-600 font-bold text-lg hover:shadow-2xl transition-all duration-300"
-            >
-              Start Free Trial
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-            <p className="text-sm text-indigo-200 mt-4">No credit card required • 14-day free trial</p>
+      <section className="py-40 px-6">
+        <div className="max-w-4xl mx-auto cartesia-card text-center space-y-8 bg-gradient-to-b from-primary/10 to-transparent">
+          <h2 className="text-4xl md:text-5xl font-display">Ready to Automate your Clinic?</h2>
+          <p className="text-lg text-muted-foreground max-w-xl mx-auto">Join the new era of healthcare operations with the world's most advanced AI medical receptionist.</p>
+          <div className="flex justify-center flex-wrap gap-4 pt-4">
+            <Link href="/dashboard" className="btn-premium px-10 py-4">Get Started Now</Link>
+            <button className="btn-secondary px-10 py-4">Talk to Sales</button>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-6 bg-slate-900 text-slate-400">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
-                  <Phone className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-lg font-bold text-white">VoiceTask AI</span>
-              </div>
-              <p className="text-sm">AI-powered voice intelligence for service businesses</p>
-            </div>
-
-            <div>
-              <h4 className="font-bold text-white mb-4">Product</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link href="#features" className="hover:text-white transition">Features</Link></li>
-                <li><Link href="#pricing" className="hover:text-white transition">Pricing</Link></li>
-                <li><Link href="/dashboard" className="hover:text-white transition">Dashboard</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-bold text-white mb-4">Company</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link href="#" className="hover:text-white transition">About</Link></li>
-                <li><Link href="#" className="hover:text-white transition">Blog</Link></li>
-                <li><Link href="#" className="hover:text-white transition">Contact</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-bold text-white mb-4">Legal</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link href="#" className="hover:text-white transition">Privacy</Link></li>
-                <li><Link href="#" className="hover:text-white transition">Terms</Link></li>
-              </ul>
-            </div>
+      <footer className="py-20 px-6 border-t border-border">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12">
+          <div className="flex items-center gap-2">
+            <Command className="w-6 h-6 text-primary" />
+            <span className="text-xl font-bold font-display tracking-tight">MedVoice AI</span>
           </div>
 
-          <div className="pt-8 border-t border-slate-800 text-center text-sm">
-            <p>© 2026 VoiceTask AI. All rights reserved.</p>
+          <div className="flex gap-8 text-sm text-muted-foreground font-medium">
+            <Link href="#" className="hover:text-white transition-colors">Privacy</Link>
+            <Link href="#" className="hover:text-white transition-colors">Terms</Link>
+            <Link href="#" className="hover:text-white transition-colors">Security</Link>
+            <Link href="#" className="hover:text-white transition-colors">API</Link>
+          </div>
+
+          <div className="text-sm text-muted-foreground font-medium">
+            © 2026 MedVoice AI. All rights reserved.
           </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function FeatureCard({ icon: Icon, title, desc }: any) {
+  return (
+    <div className="cartesia-card space-y-4 hover:scale-[1.02]">
+      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+        <Icon className="w-6 h-6" />
+      </div>
+      <h3 className="text-xl font-display">{title}</h3>
+      <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
+    </div>
+  );
+}
+
+function SecurityItem({ icon: Icon, text }: any) {
+  return (
+    <div className="flex items-center gap-3 text-foreground/80 font-medium">
+      <div className="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+        <Icon className="w-3.5 h-3.5 text-emerald-500" />
+      </div>
+      <span className="text-sm">{text}</span>
     </div>
   );
 }

@@ -1,25 +1,25 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "VoiceTask AI - AI Voice Receptionist for Service Businesses",
-  description: "Never miss a customer call again. AI-powered voice receptionist that converts calls into structured tasks automatically. Built for local service businesses.",
-  keywords: ["AI receptionist", "voice intelligence", "task automation", "service business", "call management"],
-  authors: [{ name: "VoiceTask AI" }],
+  title: "MedVoice AI | The Future of Clinical Operations",
+  description: "Enterprise-grade clinical coordination platform with sub-second neural intake and ultra-low latency inference. Built for modern medical facilities.",
+  keywords: ["Medical AI", "Clinical Intake", "Neural Scheduling", "Healthcare Automation", "HIPAA Compliant AI"],
+  authors: [{ name: "MedVoice AI" }],
   openGraph: {
-    title: "VoiceTask AI - AI Voice + Task Intelligence Platform",
-    description: "Convert phone calls into structured action items automatically. 95%+ accuracy.",
+    title: "MedVoice AI - Neural Clinical Intelligence",
+    description: "Orchestrate your medical facility with sub-second voice intelligence.",
     type: "website",
   },
 };
@@ -34,7 +34,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} ${outfit.variable} antialiased`}
       >
         <AuthProvider>
           {children}

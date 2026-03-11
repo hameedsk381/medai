@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Optional, List, Dict
 from sqlalchemy import select, func, desc, or_
 from app.database import AsyncSessionLocal, WorkerDB, TaskDB
+from ..utils.safe_print import safe_print as print
 
 
 class WorkerService:

@@ -17,7 +17,20 @@ import {
     RefreshCw,
     Award,
     TrendingUp,
-    LogOut
+    LogOut,
+    Activity,
+    MessageSquare,
+    BookOpen,
+    ShieldCheck,
+    Settings,
+    ArrowUpRight,
+    Loader2,
+    Zap,
+    X,
+    Filter,
+    Search,
+    Calendar,
+    Stethoscope
 } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 
@@ -47,14 +60,14 @@ interface WorkerStats {
 }
 
 const SKILL_OPTIONS = [
-    "AC Repair",
-    "Plumbing",
-    "Electrical",
-    "General Maintenance",
-    "Carpentry",
-    "Painting",
-    "Pest Control",
-    "Refrigerator Repair"
+    "Clinical Triage",
+    "Protocol Management",
+    "Patient Intake",
+    "EHR Integration",
+    "Insurance Verification",
+    "Laboratory Logistics",
+    "Radiology Support",
+    "Administrative Operations"
 ];
 
 export default function WorkersPage() {
@@ -64,6 +77,7 @@ export default function WorkersPage() {
     const [showAddForm, setShowAddForm] = useState(false);
     const [editingWorker, setEditingWorker] = useState<Worker | null>(null);
     const [filterStatus, setFilterStatus] = useState<string>('all');
+    const [searchTerm, setSearchTerm] = useState('');
     const { token, logout } = useAuth();
 
     // Form state
@@ -82,7 +96,6 @@ export default function WorkersPage() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            // Fetch workers
             const workersUrl = filterStatus === 'all'
                 ? `${API_URL}/api/workers`
                 : `${API_URL}/api/workers?status=${filterStatus}`;
@@ -113,7 +126,6 @@ export default function WorkersPage() {
 
         try {
             if (editingWorker) {
-                // Update existing worker
                 const response = await fetch(`${API_URL}/api/workers/${editingWorker.id}`, {
                     method: 'PATCH',
                     headers: {
@@ -125,7 +137,6 @@ export default function WorkersPage() {
 
                 if (!response.ok) throw new Error('Failed to update worker');
             } else {
-                // Create new worker
                 const response = await fetch(`${API_URL}/api/workers`, {
                     method: 'POST',
                     headers: {
@@ -138,17 +149,15 @@ export default function WorkersPage() {
                 if (!response.ok) throw new Error('Failed to create worker');
             }
 
-            // Reset form and refresh
             resetForm();
             fetchData();
         } catch (error) {
             console.error('Error saving worker:', error);
-            alert('Failed to save worker. Please try again.');
         }
     };
 
     const handleDelete = async (workerId: string) => {
-        if (!confirm('Are you sure you want to delete this worker?')) return;
+        if (!confirm('Are you sure you want to decommission this unit?')) return;
 
         try {
             const response = await fetch(`${API_URL}/api/workers/${workerId}`, {
@@ -159,11 +168,9 @@ export default function WorkersPage() {
             });
 
             if (!response.ok) throw new Error('Failed to delete worker');
-
             fetchData();
         } catch (error) {
             console.error('Error deleting worker:', error);
-            alert('Failed to delete worker. Please try again.');
         }
     };
 
@@ -200,288 +207,272 @@ export default function WorkersPage() {
         }));
     };
 
-    const getStatusColor = (status: string) => {
+    const getStatusStyles = (status: string) => {
         switch (status) {
-            case 'available': return 'bg-green-100 text-green-800';
-            case 'busy': return 'bg-yellow-100 text-yellow-800';
-            case 'offline': return 'bg-gray-100 text-gray-800';
-            default: return 'bg-gray-100 text-gray-800';
+            case 'available': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
+            case 'busy': return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
+            case 'offline': return 'bg-rose-500/10 text-rose-500 border-rose-500/20';
+            default: return 'bg-muted text-muted-foreground border-border';
         }
     };
-
-    const getStatusIcon = (status: string) => {
-        switch (status) {
-            case 'available': return <CheckCircle className="w-4 h-4" />;
-            case 'busy': return <Clock className="w-4 h-4" />;
-            case 'offline': return <XCircle className="w-4 h-4" />;
-            default: return <Clock className="w-4 h-4" />;
-        }
-    };
-
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
-                <div className="text-center">
-                    <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-                    <p className="text-gray-600">Loading workers...</p>
-                </div>
-            </div>
-        );
-    }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-            {/* Header */}
-            <div className="bg-white border-b border-gray-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <Link
-                                href="/dashboard"
-                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                            >
-                                <ArrowLeft className="w-6 h-6" />
-                            </Link>
-                            <div>
-                                <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                                    <Users className="w-8 h-8 text-blue-600" />
-                                    Worker Management
-                                </h1>
-                                <p className="text-gray-600 mt-1">Manage your service team</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <button
-                                onClick={logout}
-                                className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition font-medium"
-                            >
-                                <LogOut className="w-5 h-5" />
-                                Logout
-                            </button>
-                            <button
-                                onClick={() => setShowAddForm(true)}
-                                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
-                            >
-                                <UserPlus className="w-5 h-5" />
-                                Add Worker
-                            </button>
-                        </div>
+        <div className="flex h-screen bg-background text-foreground overflow-hidden">
+
+            {/* Sidebar Navigation - Sarvam Dark Style */}
+            <aside className="w-80 bg-[#131313] flex flex-col p-8 space-y-10 z-50">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-lg shadow-white/5">
+                        <Activity className="w-6 h-6 text-[#131313]" />
                     </div>
+                    <span className="text-xl font-bold tracking-tight text-white">MedVoice AI</span>
                 </div>
-            </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Stats Overview */}
-                {stats && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <StatCard
-                            title="Total Workers"
-                            value={stats.total_workers}
-                            icon={Users}
-                            color="blue"
-                        />
-                        <StatCard
-                            title="Available"
-                            value={stats.available}
-                            icon={CheckCircle}
-                            color="green"
-                        />
-                        <StatCard
-                            title="Busy"
-                            value={stats.busy}
-                            icon={Clock}
-                            color="yellow"
-                        />
-                        <StatCard
-                            title="Avg Rating"
-                            value={stats.average_rating ? stats.average_rating.toFixed(1) : 'N/A'}
-                            icon={Star}
-                            color="purple"
-                        />
+                <nav className="flex-1 space-y-3">
+                    <SidebarLink href="/dashboard" icon={Activity} label="Clinical Pulse" />
+                    <SidebarLink href="/dashboard/appointments" icon={Calendar} label="Appointments" />
+                    <SidebarLink href="/dashboard/doctors" icon={Stethoscope} label="Medical Staff" />
+                    <SidebarLink href="/dashboard/workers" icon={Users} label="Intelligence Nodes" active />
+                    <SidebarLink href="/dashboard/conversations" icon={MessageSquare} label="Transcripts" />
+                    <SidebarLink href="/dashboard/knowledge" icon={BookOpen} label="Intelligence Lab" />
+                    <div className="py-6 my-2 border-t border-white/5">
+                        <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.25em] px-4">Administration</span>
                     </div>
-                )}
+                    <SidebarLink href="/dashboard/compliance" icon={ShieldCheck} label="Security" />
+                    <SidebarLink href="/dashboard/settings" icon={Settings} label="Settings" />
+                </nav>
 
-                {/* Filters */}
-                <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
-                    <div className="flex items-center gap-4">
-                        <span className="text-sm font-medium text-gray-700">Filter:</span>
-                        <div className="flex gap-2">
-                            {['all', 'available', 'busy', 'offline'].map((status) => (
-                                <button
-                                    key={status}
-                                    onClick={() => setFilterStatus(status)}
-                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filterStatus === status
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                        }`}
-                                >
-                                    {status.charAt(0).toUpperCase() + status.slice(1)}
-                                </button>
-                            ))}
+                <div className="pt-8 border-t border-white/5">
+                    <button onClick={logout} className="flex items-center gap-3 text-rose-500 hover:bg-rose-500/10 w-full p-4 rounded-[20px] transition font-bold text-sm tracking-wide uppercase">
+                        <LogOut className="w-5 h-5" />
+                        Sign Out
+                    </button>
+                </div>
+            </aside>
+
+            {/* Main Content Area */}
+            <main className="flex-1 overflow-y-auto relative p-12 space-y-12 pb-32">
+
+                {/* Global Header */}
+                <header className="flex items-center justify-between pb-8 border-b border-border">
+                    <div className="flex items-center gap-6">
+                        <Link href="/dashboard" className="p-3 bg-card border border-border rounded-full hover:bg-muted transition-all shadow-sm">
+                            <ArrowLeft className="w-5 h-5 text-foreground" />
+                        </Link>
+                        <div>
+                            <h1 className="text-4xl text-foreground tracking-tighter mb-1">Intelligence Nodes</h1>
+                            <p className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em] italic">Manage Clinical Support & Field Operations</p>
                         </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
                         <button
                             onClick={fetchData}
-                            className="ml-auto p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                            className="p-3 bg-card border border-border rounded-full hover:bg-muted transition-all shadow-sm"
                         >
-                            <RefreshCw className="w-5 h-5 text-gray-600" />
+                            <RefreshCw className={`w-5 h-5 text-foreground ${loading ? 'animate-spin' : ''}`} />
                         </button>
-                    </div>
-                </div>
-
-                {/* Workers Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {workers.map((worker) => (
-                        <div
-                            key={worker.id}
-                            className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6"
-                        >
-                            {/* Header */}
-                            <div className="flex items-start justify-between mb-4">
-                                <div>
-                                    <h3 className="text-lg font-bold text-gray-900">{worker.name}</h3>
-                                    <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-                                        <Phone className="w-4 h-4" />
-                                        {worker.phone}
-                                    </div>
-                                </div>
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(worker.status)}`}>
-                                    {getStatusIcon(worker.status)}
-                                    {worker.status}
-                                </span>
-                            </div>
-
-                            {/* Skills */}
-                            <div className="mb-4">
-                                <div className="flex flex-wrap gap-2">
-                                    {worker.skills.map((skill) => (
-                                        <span
-                                            key={skill}
-                                            className="px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-medium"
-                                        >
-                                            {skill}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Stats */}
-                            <div className="grid grid-cols-2 gap-4 mb-4 pt-4 border-t border-gray-100">
-                                <div>
-                                    <div className="text-xs text-gray-500">Current Tasks</div>
-                                    <div className="text-lg font-bold text-gray-900">
-                                        {worker.current_tasks}/{worker.max_tasks}
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="text-xs text-gray-500">Total Jobs</div>
-                                    <div className="text-lg font-bold text-gray-900 flex items-center gap-1">
-                                        <TrendingUp className="w-4 h-4 text-green-600" />
-                                        {worker.total_jobs}
-                                    </div>
-                                </div>
-                                {worker.rating && (
-                                    <div className="col-span-2">
-                                        <div className="text-xs text-gray-500">Rating</div>
-                                        <div className="text-lg font-bold text-gray-900 flex items-center gap-1">
-                                            <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                                            {worker.rating.toFixed(1)}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Actions */}
-                            <div className="flex gap-2 pt-4 border-t border-gray-100">
-                                <button
-                                    onClick={() => startEdit(worker)}
-                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                                >
-                                    <Edit2 className="w-4 h-4" />
-                                    Edit
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(worker.id)}
-                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                    Delete
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                {workers.length === 0 && (
-                    <div className="text-center py-12 bg-white rounded-xl shadow-sm">
-                        <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No workers found</h3>
-                        <p className="text-gray-600 mb-4">Get started by adding your first worker</p>
                         <button
                             onClick={() => setShowAddForm(true)}
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
+                            className="btn-sarvam-primary flex items-center gap-2"
                         >
                             <UserPlus className="w-5 h-5" />
-                            Add Worker
+                            Deploy Node
                         </button>
                     </div>
-                )}
-            </div>
+                </header>
 
-            {/* Add/Edit Form Modal */}
+                {/* Stats Overview */}
+                {stats && (
+                    <div className="grid grid-cols-4 gap-8">
+                        <MetricCard title="Total Nodes" value={stats.total_workers} icon={Users} color="light" delta="STABLE" />
+                        <MetricCard title="Operational" value={stats.available} icon={CheckCircle} color="light" delta="ACTIVE" />
+                        <MetricCard title="Capacity" value={stats.busy} icon={Clock} color="dark" delta="COMPUTING" />
+                        <MetricCard title="Performance" value={stats.average_rating ? stats.average_rating.toFixed(1) : 'N/A'} icon={Star} color="light" delta="OPTIMAL" />
+                    </div>
+                )}
+
+                {/* Filters & Control Bar */}
+                <div className="space-y-10">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                            <h2 className="text-3xl tracking-tight text-foreground">Operational Roster</h2>
+                            <div className="flex bg-muted p-1 rounded-full border border-border">
+                                {['all', 'available', 'busy', 'offline'].map((status) => (
+                                    <button
+                                        key={status}
+                                        onClick={() => setFilterStatus(status)}
+                                        className={`px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${filterStatus === status
+                                            ? 'bg-card text-foreground shadow-sm border border-border'
+                                            : 'text-muted-foreground hover:text-foreground'
+                                            }`}
+                                    >
+                                        {status}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="relative group">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-foreground transition-colors" />
+                            <input
+                                type="text"
+                                placeholder="Filter node ID..."
+                                className="pl-12 pr-6 py-3 bg-card border border-border rounded-full text-sm w-72 focus:ring-1 focus:ring-foreground outline-none transition-all shadow-sm"
+                            />
+                        </div>
+                    </div>
+
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center h-64 space-y-4">
+                            <Loader2 className="w-12 h-12 text-foreground animate-spin" />
+                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Synchronizing Node States...</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {workers.map((worker) => (
+                                <div
+                                    key={worker.id}
+                                    className="sarvam-card bg-card border border-border hover:shadow-2xl hover:shadow-black/5 transition-all group relative overflow-hidden"
+                                >
+                                    <div className="flex justify-between items-start mb-8">
+                                        <div className="w-16 h-16 rounded-[24px] bg-muted border border-border flex items-center justify-center text-foreground group-hover:scale-110 transition-transform">
+                                            <Briefcase className="w-8 h-8" />
+                                        </div>
+                                        <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${getStatusStyles(worker.status)}`}>
+                                            {worker.status}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1 mb-6">
+                                        <h3 className="text-2xl font-bold text-foreground tracking-tight uppercase" style={{ fontFamily: "'DM Serif Text', serif" }}>{worker.name}</h3>
+                                        <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                                            <Phone className="w-4 h-4 text-border" />
+                                            {worker.phone}
+                                        </div>
+                                    </div>
+
+                                    <div className="mb-8 min-h-[64px]">
+                                        <div className="flex flex-wrap gap-2">
+                                            {worker.skills.map((skill) => (
+                                                <span
+                                                    key={skill}
+                                                    className="px-3 py-1 bg-muted border border-border rounded-full text-[9px] font-black uppercase tracking-widest text-muted-foreground"
+                                                >
+                                                    {skill}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-6 mb-8 pt-6 border-t border-border">
+                                        <div>
+                                            <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-1">Compute Load</div>
+                                            <div className="text-xl font-bold text-foreground">
+                                                {worker.current_tasks}<span className="text-muted-foreground/30 mx-1">/</span>{worker.max_tasks}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-1">Protocol Success</div>
+                                            <div className="text-xl font-bold text-foreground flex items-center gap-2">
+                                                <TrendingUp className="w-4 h-4 text-emerald-500" />
+                                                {worker.total_jobs}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-4 pt-6 border-t border-border">
+                                        <button
+                                            onClick={() => startEdit(worker)}
+                                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-muted border border-border text-foreground rounded-[20px] font-black text-[10px] uppercase tracking-widest hover:bg-background transition-colors"
+                                        >
+                                            <Edit2 className="w-4 h-4" />
+                                            Reconfigure
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(worker.id)}
+                                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-rose-500/5 border border-rose-500/10 text-rose-500 rounded-[20px] font-black text-[10px] uppercase tracking-widest hover:bg-rose-500/10 transition-colors"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                            Decommission
+                                        </button>
+                                    </div>
+                                    <button className="absolute bottom-6 right-6 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <ArrowUpRight className="w-5 h-5 text-foreground" />
+                                    </button>
+                                </div>
+                            ))}
+
+                            {workers.length === 0 && (
+                                <div className="col-span-3 text-center py-32 bg-card border border-border rounded-[40px] shadow-sm">
+                                    <Users className="w-16 h-16 text-muted-foreground/20 mx-auto mb-6" />
+                                    <h3 className="text-2xl font-bold text-foreground mb-4 racking-tighter">No Active Nodes</h3>
+                                    <p className="text-muted-foreground mb-10 max-w-sm mx-auto text-sm leading-relaxed font-medium">Get started by deploying your first clinical intelligence node to the operational field.</p>
+                                    <button
+                                        onClick={() => setShowAddForm(true)}
+                                        className="btn-sarvam-primary flex items-center gap-2 mx-auto"
+                                    >
+                                        <UserPlus className="w-5 h-5" />
+                                        Initialize First Node
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </main>
+
+            {/* Add Node Modal - Sarvam Style */}
             {showAddForm && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                        <div className="p-6 border-b border-gray-200">
-                            <h2 className="text-2xl font-bold text-gray-900">
-                                {editingWorker ? 'Edit Worker' : 'Add New Worker'}
-                            </h2>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+                    <div className="bg-card border border-border rounded-[40px] w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+                        <div className="p-10 border-b border-border flex items-center justify-between">
+                            <div>
+                                <h2 className="text-3xl tracking-tighter text-foreground">Node Provisioning</h2>
+                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">Configure Field Intelligence Protocols</p>
+                            </div>
+                            <button onClick={resetForm} className="p-3 hover:bg-muted rounded-full transition-colors border border-border">
+                                <X className="w-5 h-5 text-foreground" />
+                            </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                            {/* Name */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Worker Name *
-                                </label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    placeholder="Enter worker name"
-                                />
+                        <form onSubmit={handleSubmit} className="p-10 space-y-8 max-h-[70vh] overflow-y-auto">
+                            <div className="grid grid-cols-2 gap-8">
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Assigned Name</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        className="w-full px-6 py-4 rounded-[20px] border border-border bg-muted text-foreground focus:ring-1 focus:ring-foreground outline-none transition shadow-sm"
+                                        placeholder="Alpha-7 Personnel"
+                                    />
+                                </div>
+
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Direct Secure Line</label>
+                                    <input
+                                        type="tel"
+                                        required
+                                        value={formData.phone}
+                                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                        className="w-full px-6 py-4 rounded-[20px] border border-border bg-muted text-foreground focus:ring-1 focus:ring-foreground outline-none transition shadow-sm"
+                                        placeholder="+1 000 000 0000"
+                                    />
+                                </div>
                             </div>
 
-                            {/* Phone */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Phone Number *
-                                </label>
-                                <input
-                                    type="tel"
-                                    required
-                                    value={formData.phone}
-                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    placeholder="+919876543210"
-                                />
-                            </div>
-
-                            {/* Skills */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Skills * (Select at least one)
-                                </label>
-                                <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-4">
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Neural Skill Matrices (Select Required)</label>
+                                <div className="grid grid-cols-2 gap-3">
                                     {SKILL_OPTIONS.map((skill) => (
                                         <button
                                             key={skill}
                                             type="button"
                                             onClick={() => toggleSkill(skill)}
-                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${formData.skills.includes(skill)
-                                                ? 'bg-blue-600 text-white'
-                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                            className={`px-6 py-4 rounded-[20px] text-[10px] font-black uppercase tracking-widest transition-all border ${formData.skills.includes(skill)
+                                                ? 'bg-foreground text-background border-foreground'
+                                                : 'bg-muted text-muted-foreground border-border hover:border-foreground/30'
                                                 }`}
                                         >
                                             {skill}
@@ -490,54 +481,49 @@ export default function WorkersPage() {
                                 </div>
                             </div>
 
-                            {/* Max Tasks */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Maximum Concurrent Tasks
-                                </label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max="20"
-                                    value={formData.max_tasks}
-                                    onChange={(e) => setFormData({ ...formData, max_tasks: parseInt(e.target.value) })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                            <div className="grid grid-cols-2 gap-8">
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Concurrent Task Limit</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="20"
+                                        value={formData.max_tasks}
+                                        onChange={(e) => setFormData({ ...formData, max_tasks: parseInt(e.target.value) })}
+                                        className="w-full px-6 py-4 rounded-[20px] border border-border bg-muted text-foreground focus:ring-1 focus:ring-foreground outline-none transition shadow-sm"
+                                    />
+                                </div>
+
+                                {editingWorker && (
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Operational Status</label>
+                                        <select
+                                            value={formData.status}
+                                            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                            className="w-full px-6 py-4 rounded-[20px] border border-border bg-muted text-foreground focus:ring-1 focus:ring-foreground outline-none transition shadow-sm appearance-none"
+                                        >
+                                            <option value="available">Available</option>
+                                            <option value="busy">Busy</option>
+                                            <option value="offline">Offline</option>
+                                        </select>
+                                    </div>
+                                )}
                             </div>
 
-                            {/* Status (only for edit) */}
-                            {editingWorker && (
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Status
-                                    </label>
-                                    <select
-                                        value={formData.status}
-                                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    >
-                                        <option value="available">Available</option>
-                                        <option value="busy">Busy</option>
-                                        <option value="offline">Offline</option>
-                                    </select>
-                                </div>
-                            )}
-
-                            {/* Actions */}
-                            <div className="flex gap-4 pt-4">
+                            <div className="flex gap-4 pt-8">
                                 <button
                                     type="button"
                                     onClick={resetForm}
-                                    className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                                    className="flex-1 py-5 border border-border text-foreground rounded-[24px] font-black text-[11px] uppercase tracking-widest hover:bg-muted transition-colors"
                                 >
-                                    Cancel
+                                    Abort
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={formData.skills.length === 0}
-                                    className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="btn-sarvam-primary flex-1 py-5 shadow-xl shadow-black/5"
                                 >
-                                    {editingWorker ? 'Update Worker' : 'Add Worker'}
+                                    {editingWorker ? 'Commit Configuration' : 'Deploy Intelligence Node'}
                                 </button>
                             </div>
                         </form>
@@ -548,32 +534,35 @@ export default function WorkersPage() {
     );
 }
 
-interface StatCardProps {
-    title: string;
-    value: string | number;
-    icon: React.ElementType;
-    color: 'blue' | 'green' | 'yellow' | 'purple';
+function SidebarLink({ href, icon: Icon, label, active = false }: any) {
+    return (
+        <Link
+            href={href}
+            className={`flex items-center gap-4 p-5 rounded-[24px] font-bold text-sm transition-all group ${active
+                ? 'bg-white text-[#131313] shadow-lg shadow-white/5'
+                : 'text-white/40 hover:bg-white/5 hover:text-white'
+                }`}
+        >
+            <Icon className={`w-6 h-6 transition-colors ${active ? 'text-[#131313]' : 'text-white/20 group-hover:text-white'}`} />
+            <span className="tracking-wide">{label}</span>
+        </Link>
+    );
 }
 
-function StatCard({ title, value, icon: Icon, color }: StatCardProps) {
-    const colorClasses = {
-        blue: 'bg-blue-50 text-blue-600',
-        green: 'bg-green-50 text-green-600',
-        yellow: 'bg-yellow-50 text-yellow-600',
-        purple: 'bg-purple-50 text-purple-600',
-    };
-
+function MetricCard({ title, value, icon: Icon, color, delta }: any) {
+    const isDark = color === 'dark';
     return (
-        <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <p className="text-sm text-gray-600 mb-1">{title}</p>
-                    <p className="text-3xl font-bold text-gray-900">{value}</p>
+        <div className={`sarvam-card overflow-hidden group hover:scale-[1.02] transition-transform duration-500 shadow-xl shadow-black/5 ${isDark ? 'bg-[#131313] text-white border-none' : 'bg-card border border-border text-foreground'}`}>
+            <div className="flex items-start justify-between mb-8">
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg ${isDark ? 'bg-white/10' : 'bg-muted border border-border'}`}>
+                    <Icon className={`w-7 h-7 ${isDark ? 'text-white' : 'text-foreground'}`} />
                 </div>
-                <div className={`p-3 rounded-xl ${colorClasses[color]}`}>
-                    <Icon className="w-6 h-6" />
+                <div className={`px-4 py-1.5 rounded-full text-[10px] font-black border tracking-widest ${isDark ? 'border-white/10 bg-white/5 text-white/50' : 'border-border bg-muted text-muted-foreground'}`}>
+                    {delta}
                 </div>
             </div>
+            <div className="text-5xl font-medium tracking-tighter mb-2" style={{ fontFamily: "'DM Serif Text', serif" }}>{value}</div>
+            <div className={`text-[11px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/30' : 'text-muted-foreground'}`}>{title}</div>
         </div>
     );
 }

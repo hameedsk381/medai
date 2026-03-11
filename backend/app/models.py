@@ -19,15 +19,22 @@ class UrgencyLevel(str, Enum):
 
 
 class ServiceIntent(str, Enum):
+    # --- Medical Intents ---
+    APPOINTMENT_BOOKING = "Appointment Booking"
+    APPOINTMENT_STATUS = "Appointment Status"
+    APPOINTMENT_RESCHEDULE = "Appointment Reschedule"
+    APPOINTMENT_CANCEL = "Appointment Cancel"
+    PRESCRIPTION_RENEWAL = "Prescription Renewal"
+    TEST_RESULTS = "Test Results Inquiry"
+    DOCTOR_AVAILABILITY = "Doctor Availability"
+    GENERAL_INQUIRY = "General Inquiry"
+    EMERGENCY = "Emergency"
+    
+    # --- Legacy Service Intents (For backward compatibility) ---
     AC_REPAIR = "AC Repair"
     PLUMBING = "Plumbing"
     ELECTRICAL = "Electrical"
     GENERAL_MAINTENANCE = "General Maintenance"
-    CLINIC_APPOINTMENT = "Clinic Appointment"
-    PROPERTY_INSPECTION = "Property Inspection"
-    PEST_CONTROL = "Pest Control"
-    PAINTING = "Painting"
-    CARPENTRY = "Carpentry"
     OTHER = "Other"
 
 
@@ -35,6 +42,56 @@ class WorkerStatus(str, Enum):
     AVAILABLE = "available"
     BUSY = "busy"
     OFFLINE = "offline"
+
+
+class Patient(BaseModel):
+    """Patient model representation"""
+    id: str
+    business_id: str
+    name: str
+    phone: str
+    date_of_birth: Optional[datetime] = None
+    medical_id: Optional[str] = None
+    created_at: datetime
+
+
+class Doctor(BaseModel):
+    """Doctor model representation"""
+    id: str
+    business_id: str
+    name: str
+    specialization: Optional[str] = None
+    phone: Optional[str] = None
+    schedule: Optional[str] = None  # JSON string
+    status: str
+    created_at: datetime
+
+
+class Appointment(BaseModel):
+    """Medical appointment representation"""
+    id: str
+    business_id: str
+    patient_id: str
+    doctor_id: str
+    date: datetime
+    time_slot: str
+    status: str
+    notes: Optional[str] = None
+    created_via: str
+    created_at: datetime
+
+
+class ConversationSession(BaseModel):
+    """Voice interaction session representation"""
+    id: str
+    business_id: str
+    caller_phone: str
+    patient_id: Optional[str] = None
+    transcript: Optional[str] = None
+    intent: Optional[str] = None
+    outcome: Optional[str] = None
+    duration_seconds: Optional[int] = None
+    created_at: datetime
 
 
 class Task(BaseModel):
@@ -111,6 +168,22 @@ class UserInDB(UserBase):
     id: str
     hashed_password: str
     created_at: datetime
+
+
+class ClinicKnowledge(BaseModel):
+    """Clinic specific knowledge item"""
+    id: str
+    business_id: str
+    category: str
+    key: str
+    value: str
+    updated_at: datetime
+
+class ClinicKnowledgeCreate(BaseModel):
+    """Schema for creating/updating knowledge items"""
+    category: str
+    key: str
+    value: str
 
 class Token(BaseModel):
     access_token: str

@@ -6,9 +6,23 @@ import os
 from datetime import datetime
 import uuid
 
+# Production-grade engine configuration
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./data/receptionist.db")
 
-engine = create_async_engine(DATABASE_URL, echo=False)
+# Engine options for stability and performance
+engine_args = {
+    "echo": False,
+    "pool_pre_ping": True,  # Prevent stale connections (Phase 4 Hardening)
+}
+
+if "postgresql" in DATABASE_URL:
+    engine_args.update({
+        "pool_size": 10,
+        "max_overflow": 20,
+        "pool_recycle": 3600,
+    })
+
+engine = create_async_engine(DATABASE_URL, **engine_args)
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 Base = declarative_base()
 
@@ -66,6 +80,67 @@ class WorkerDB(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class PatientDB(Base):
+    """Database model for clinical patients"""
+    __tablename__ = "patients"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    business_id = Column(String, index=True, nullable=False)
+    name = Column(String, nullable=False)
+    phone = Column(String, index=True, nullable=False)
+    date_of_birth = Column(DateTime, nullable=True)
+    medical_id = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class DoctorDB(Base):
+    """Database model for doctors/medical staff"""
+    __tablename__ = "doctors"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    business_id = Column(String, index=True, nullable=False)
+    name = Column(String, nullable=False)
+    specialization = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
+    schedule = Column(Text, nullable=True)  # JSON string of availability
+    status = Column(String, default="active")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class AppointmentDB(Base):
+    """Database model for medical appointments"""
+    __tablename__ = "appointments"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    business_id = Column(String, index=True, nullable=False)
+    patient_id = Column(String, index=True, nullable=False)
+    doctor_id = Column(String, index=True, nullable=False)
+    date = Column(DateTime, nullable=False)
+    time_slot = Column(String, nullable=False)
+    status = Column(String, default="scheduled")  # scheduled, completed, cancelled, no_show
+    notes = Column(Text, nullable=True)
+    created_via = Column(String, default="ai_call")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class ConversationSessionDB(Base):
+    """Database model for multi-turn conversation sessions (archival)"""
+    __tablename__ = "conversation_sessions"
+
+    id = Column(String, primary_key=True)  # Using Twilio call SID
+    business_id = Column(String, index=True, nullable=False)
+    caller_phone = Column(String, nullable=False)
+    patient_id = Column(String, nullable=True)
+    transcript = Column(Text, nullable=True)  # Full interaction JSON
+    intent = Column(String, nullable=True)
+    outcome = Column(String, nullable=True)  # booked, transferred, dropped
+    duration_seconds = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class CallLogDB(Base):
     """Database model for call logs"""
     __tablename__ = "call_logs"
@@ -108,3 +183,40 @@ async def get_db():
     """Get database session"""
     async with AsyncSessionLocal() as session:
         yield session
+
+
+class PatientVerificationDB(Base):
+    """Database model for clinical patient verification (OTP/ID) (Phase 4)"""
+    __tablename__ = "patient_verifications"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    patient_id = Column(String, index=True, nullable=False)
+    verification_code = Column(String, nullable=False)
+    verified = Column(Boolean, default=False)
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class AuditLogDB(Base):
+    """Database model for administrative audit trails (HIPAA requirement) (Phase 4)"""
+    __tablename__ = "audit_logs"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    business_id = Column(String, index=True, nullable=False)
+    user_id = Column(String, nullable=True)  # Admin who performed action
+    action = Column(String, nullable=False)  # VIEW_PATIENT, BOOK_APPT, etc.
+    resource_id = Column(String, nullable=True)
+    details = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class ClinicKnowledgeDB(Base):
+    """Database model for clinic-specific knowledge, FAQs, and policies (Phase 3)"""
+    __tablename__ = "clinic_knowledge"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    business_id = Column(String, index=True, nullable=False)
+    category = Column(String, nullable=False)  # 'general', 'hours', 'policy', 'faq'
+    key = Column(String, nullable=False)       # 'phone', 'address', 'cancellation_policy', etc.
+    value = Column(String, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

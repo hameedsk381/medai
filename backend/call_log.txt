@@ -1,0 +1,221 @@
+--- Inbound Headers ---
+host: nonlubricious-bennett-duskily.ngrok-free.dev
+user-agent: TwilioProxy/1.1
+content-length: 567
+accept: */*
+content-type: application/x-www-form-urlencoded; charset=UTF-8
+i-twilio-idempotency-token: 8871e232-b9b8-4847-8f9b-c3fb0443e0dc
+x-forwarded-for: 18.215.181.68
+x-forwarded-host: nonlubricious-bennett-duskily.ngrok-free.dev
+x-forwarded-proto: https
+x-home-region: us1
+x-twilio-answertimeout: PT15S
+x-twilio-answertimeout: PT15S
+x-twilio-service-flow-event: %7B%22flow_id%22%3A%22RQ349b021478cab459b9e299f3f6039ffc%22%2C%22type%22%3A%22api_event%22%2C%22action%22%3A%22twiml_fetch%22%2C%22sub_action%22%3A%22completed%22%2C%22result%22%3A%22success%22%2C%22metadata%22%3A%7B%22transfer_type%22%3A%22call_transfer_url%22%7D%7D
+x-twilio-signature: M3ShJollwIOYc371KizfiTbHlVE=
+accept-encoding: gzip
+----------------------
+📞 Outbound call answered. Host for Stream: nonlubricious-bennett-duskily.ngrok-free.dev, Business: c39a32dd-3045-4a1e-8265-a21315b9427d
+📢 Generated TwiML: <?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="wss://nonlubricious-bennett-duskily.ngrok-free.dev/voice-stream"><Parameter name="business_id" value="c39a32dd-3045-4a1e-8265-a21315b9427d" /><Parameter name="is_outbound" value="true" /></Stream></Connect></Response>
+🔌 WebSocket connected for Clinic: c39a32dd-3045-4a1e-8265-a21315b9427d (Outbound: True)
+--- Inbound Headers ---
+host: nonlubricious-bennett-duskily.ngrok-free.dev
+user-agent: TwilioProxy/1.1
+content-length: 567
+accept: */*
+content-type: application/x-www-form-urlencoded; charset=UTF-8
+i-twilio-idempotency-token: df1ae2f0-39f3-4a83-9026-39b8d8550b39
+x-forwarded-for: 54.175.254.63
+x-forwarded-host: nonlubricious-bennett-duskily.ngrok-free.dev
+x-forwarded-proto: https
+x-home-region: us1
+x-twilio-answertimeout: PT15S
+x-twilio-answertimeout: PT15S
+x-twilio-service-flow-event: %7B%22flow_id%22%3A%22RQbccf30de38afaa48aa3e0f991d7442b2%22%2C%22type%22%3A%22api_event%22%2C%22action%22%3A%22twiml_fetch%22%2C%22sub_action%22%3A%22completed%22%2C%22result%22%3A%22success%22%2C%22metadata%22%3A%7B%22transfer_type%22%3A%22call_transfer_url%22%7D%7D
+x-twilio-signature: qLXhVGPPzHFxM6Zur0u8uNARXV8=
+accept-encoding: gzip
+----------------------
+📞 Outbound call answered. Host for Stream: nonlubricious-bennett-duskily.ngrok-free.dev, Business: c39a32dd-3045-4a1e-8265-a21315b9427d
+📢 Generated TwiML: <?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="wss://nonlubricious-bennett-duskily.ngrok-free.dev/voice-stream"><Parameter name="business_id" value="c39a32dd-3045-4a1e-8265-a21315b9427d" /><Parameter name="is_outbound" value="true" /></Stream></Connect></Response>
+🔌 WebSocket connected for Clinic: c39a32dd-3045-4a1e-8265-a21315b9427d (Outbound: True)
+--- Inbound Headers ---
+host: nonlubricious-bennett-duskily.ngrok-free.dev
+user-agent: TwilioProxy/1.1
+content-length: 569
+accept: */*
+content-type: application/x-www-form-urlencoded; charset=UTF-8
+i-twilio-idempotency-token: 6735f21d-ccb1-4409-98b4-3d08cd5f761f
+x-forwarded-for: 18.233.225.114
+x-forwarded-host: nonlubricious-bennett-duskily.ngrok-free.dev
+x-forwarded-proto: https
+x-home-region: us1
+x-twilio-answertimeout: PT15S
+x-twilio-answertimeout: PT15S
+x-twilio-service-flow-event: %7B%22flow_id%22%3A%22RQb4ecb26c9332c7892599a3d90ac2074e%22%2C%22type%22%3A%22api_event%22%2C%22action%22%3A%22twiml_fetch%22%2C%22sub_action%22%3A%22completed%22%2C%22result%22%3A%22success%22%2C%22metadata%22%3A%7B%22transfer_type%22%3A%22call_transfer_url%22%7D%7D
+x-twilio-signature: bw6VGWXqbLbvWtNn08hCvqrBEtw=
+accept-encoding: gzip
+----------------------
+📞 Outbound call answered. Host for Stream: nonlubricious-bennett-duskily.ngrok-free.dev, Business: c39a32dd-3045-4a1e-8265-a21315b9427d
+📢 Generated TwiML: <?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="wss://nonlubricious-bennett-duskily.ngrok-free.dev/voice-stream"><Parameter name="business_id" value="c39a32dd-3045-4a1e-8265-a21315b9427d" /><Parameter name="is_outbound" value="true" /></Stream></Connect></Response>
+🔌 WebSocket connected for Clinic: c39a32dd-3045-4a1e-8265-a21315b9427d (Outbound: True)
+--- Inbound Headers ---
+host: nonlubricious-bennett-duskily.ngrok-free.dev
+user-agent: TwilioProxy/1.1
+content-length: 569
+accept: */*
+content-type: application/x-www-form-urlencoded; charset=UTF-8
+i-twilio-idempotency-token: 032e3fc8-ed33-4520-99d5-948cb4911109
+x-forwarded-for: 52.23.159.117
+x-forwarded-host: nonlubricious-bennett-duskily.ngrok-free.dev
+x-forwarded-proto: https
+x-home-region: us1
+x-twilio-answertimeout: PT15S
+x-twilio-answertimeout: PT15S
+x-twilio-service-flow-event: %7B%22flow_id%22%3A%22RQ9a5aaab9bfe31788e3f43bd6803a2acc%22%2C%22type%22%3A%22api_event%22%2C%22action%22%3A%22twiml_fetch%22%2C%22sub_action%22%3A%22completed%22%2C%22result%22%3A%22success%22%2C%22metadata%22%3A%7B%22transfer_type%22%3A%22call_transfer_url%22%7D%7D
+x-twilio-signature: zAvLYBq/d9/myo2F8gCkQMe2XSA=
+accept-encoding: gzip
+----------------------
+📞 Outbound call answered. Host for Stream: nonlubricious-bennett-duskily.ngrok-free.dev, Business: c39a32dd-3045-4a1e-8265-a21315b9427d
+📢 Generated TwiML: <?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="wss://nonlubricious-bennett-duskily.ngrok-free.dev/voice-stream"><Parameter name="business_id" value="c39a32dd-3045-4a1e-8265-a21315b9427d" /><Parameter name="is_outbound" value="true" /></Stream></Connect></Response>
+🔌 WebSocket connected for Clinic: c39a32dd-3045-4a1e-8265-a21315b9427d (Outbound: True)
+--- Inbound Headers ---
+host: nonlubricious-bennett-duskily.ngrok-free.dev
+user-agent: TwilioProxy/1.1
+content-length: 567
+accept: */*
+content-type: application/x-www-form-urlencoded; charset=UTF-8
+i-twilio-idempotency-token: 36779aa2-c0f8-4d5d-98c2-423071cdae49
+x-forwarded-for: 174.129.107.216
+x-forwarded-host: nonlubricious-bennett-duskily.ngrok-free.dev
+x-forwarded-proto: https
+x-home-region: us1
+x-twilio-answertimeout: PT15S
+x-twilio-answertimeout: PT15S
+x-twilio-service-flow-event: %7B%22flow_id%22%3A%22RQ82adff2f5b635835a3699cf2440d07b6%22%2C%22type%22%3A%22api_event%22%2C%22action%22%3A%22twiml_fetch%22%2C%22sub_action%22%3A%22completed%22%2C%22result%22%3A%22success%22%2C%22metadata%22%3A%7B%22transfer_type%22%3A%22call_transfer_url%22%7D%7D
+x-twilio-signature: NoGz9y2gz+eA+tN97GZaisbEOfo=
+accept-encoding: gzip
+----------------------
+📞 Outbound call answered. Host for Stream: nonlubricious-bennett-duskily.ngrok-free.dev, Business: c39a32dd-3045-4a1e-8265-a21315b9427d
+📢 Generated TwiML: <?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="wss://nonlubricious-bennett-duskily.ngrok-free.dev/voice-stream"><Parameter name="business_id" value="c39a32dd-3045-4a1e-8265-a21315b9427d" /><Parameter name="is_outbound" value="true" /></Stream></Connect></Response>
+🔌 WebSocket connected for Clinic: c39a32dd-3045-4a1e-8265-a21315b9427d (Outbound: True)
+--- Inbound Headers ---
+host: nonlubricious-bennett-duskily.ngrok-free.dev
+user-agent: TwilioProxy/1.1
+content-length: 567
+accept: */*
+content-type: application/x-www-form-urlencoded; charset=UTF-8
+i-twilio-idempotency-token: b29fb7fd-49fe-49a7-b082-90569e791aac
+x-forwarded-for: 44.208.32.17
+x-forwarded-host: nonlubricious-bennett-duskily.ngrok-free.dev
+x-forwarded-proto: https
+x-home-region: us1
+x-twilio-answertimeout: PT15S
+x-twilio-answertimeout: PT15S
+x-twilio-service-flow-event: %7B%22flow_id%22%3A%22RQ7c19e7284a6f8fac71c7a3fc4f94a6ac%22%2C%22type%22%3A%22api_event%22%2C%22action%22%3A%22twiml_fetch%22%2C%22sub_action%22%3A%22completed%22%2C%22result%22%3A%22success%22%2C%22metadata%22%3A%7B%22transfer_type%22%3A%22call_transfer_url%22%7D%7D
+x-twilio-signature: g1kQ1IAQYIIPxFjvghkS4CVMUDE=
+accept-encoding: gzip
+----------------------
+📞 Outbound call answered. Host for Stream: nonlubricious-bennett-duskily.ngrok-free.dev, Business: c39a32dd-3045-4a1e-8265-a21315b9427d
+📢 Generated TwiML: <?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="wss://nonlubricious-bennett-duskily.ngrok-free.dev/voice-stream"><Parameter name="business_id" value="c39a32dd-3045-4a1e-8265-a21315b9427d" /><Parameter name="is_outbound" value="true" /></Stream></Connect></Response>
+🔌 WebSocket connected for Clinic: c39a32dd-3045-4a1e-8265-a21315b9427d (Outbound: True)
+--- Inbound Headers ---
+host: nonlubricious-bennett-duskily.ngrok-free.dev
+user-agent: TwilioProxy/1.1
+content-length: 567
+accept: */*
+content-type: application/x-www-form-urlencoded; charset=UTF-8
+i-twilio-idempotency-token: ef6eecac-d2a4-40d8-992e-515cb6e44226
+x-forwarded-for: 13.222.190.45
+x-forwarded-host: nonlubricious-bennett-duskily.ngrok-free.dev
+x-forwarded-proto: https
+x-home-region: us1
+x-twilio-answertimeout: PT15S
+x-twilio-answertimeout: PT15S
+x-twilio-service-flow-event: %7B%22flow_id%22%3A%22RQ34227d43c51d02f72bc307aa487fbf8c%22%2C%22type%22%3A%22api_event%22%2C%22action%22%3A%22twiml_fetch%22%2C%22sub_action%22%3A%22completed%22%2C%22result%22%3A%22success%22%2C%22metadata%22%3A%7B%22transfer_type%22%3A%22call_transfer_url%22%7D%7D
+x-twilio-signature: HmRp362JuO+dHPJZP7LuEQF0S2c=
+accept-encoding: gzip
+----------------------
+📞 Outbound call answered. Host for Stream: nonlubricious-bennett-duskily.ngrok-free.dev, Business: c39a32dd-3045-4a1e-8265-a21315b9427d
+📢 Generated TwiML: <?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="wss://nonlubricious-bennett-duskily.ngrok-free.dev/voice-stream"><Parameter name="business_id" value="c39a32dd-3045-4a1e-8265-a21315b9427d" /><Parameter name="is_outbound" value="true" /></Stream></Connect></Response>
+🔌 WebSocket connected for Clinic: c39a32dd-3045-4a1e-8265-a21315b9427d (Outbound: True)
+--- Inbound Headers ---
+host: nonlubricious-bennett-duskily.ngrok-free.dev
+user-agent: TwilioProxy/1.1
+content-length: 567
+accept: */*
+content-type: application/x-www-form-urlencoded; charset=UTF-8
+i-twilio-idempotency-token: 9d989277-48cf-4eb5-ae13-fa65f9abc2e4
+x-forwarded-for: 54.173.34.168
+x-forwarded-host: nonlubricious-bennett-duskily.ngrok-free.dev
+x-forwarded-proto: https
+x-home-region: us1
+x-twilio-answertimeout: PT15S
+x-twilio-answertimeout: PT15S
+x-twilio-service-flow-event: %7B%22flow_id%22%3A%22RQ71e5eb16ce9a75442d8095274d46044f%22%2C%22type%22%3A%22api_event%22%2C%22action%22%3A%22twiml_fetch%22%2C%22sub_action%22%3A%22completed%22%2C%22result%22%3A%22success%22%2C%22metadata%22%3A%7B%22transfer_type%22%3A%22call_transfer_url%22%7D%7D
+x-twilio-signature: eqpisyW9VB51miDrOMqkACsiLZ8=
+accept-encoding: gzip
+----------------------
+📞 Outbound call answered. Host for Stream: nonlubricious-bennett-duskily.ngrok-free.dev, Business: c39a32dd-3045-4a1e-8265-a21315b9427d
+📢 Generated TwiML: <?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="wss://nonlubricious-bennett-duskily.ngrok-free.dev/voice-stream"><Parameter name="business_id" value="c39a32dd-3045-4a1e-8265-a21315b9427d" /><Parameter name="is_outbound" value="true" /></Stream></Connect></Response>
+🔌 WebSocket connected for Clinic: c39a32dd-3045-4a1e-8265-a21315b9427d (Outbound: True)
+--- Inbound Headers ---
+host: nonlubricious-bennett-duskily.ngrok-free.dev
+user-agent: TwilioProxy/1.1
+content-length: 569
+accept: */*
+content-type: application/x-www-form-urlencoded; charset=UTF-8
+i-twilio-idempotency-token: 5c8c7861-1289-4c7f-8591-821a7cbff089
+x-forwarded-for: 54.221.21.134
+x-forwarded-host: nonlubricious-bennett-duskily.ngrok-free.dev
+x-forwarded-proto: https
+x-home-region: us1
+x-twilio-answertimeout: PT15S
+x-twilio-answertimeout: PT15S
+x-twilio-service-flow-event: %7B%22flow_id%22%3A%22RQ9d0409ce5e035c9e88ccd10ee5ceea1a%22%2C%22type%22%3A%22api_event%22%2C%22action%22%3A%22twiml_fetch%22%2C%22sub_action%22%3A%22completed%22%2C%22result%22%3A%22success%22%2C%22metadata%22%3A%7B%22transfer_type%22%3A%22call_transfer_url%22%7D%7D
+x-twilio-signature: incv+/bLYLrANHVCbOa3O00N7go=
+accept-encoding: gzip
+----------------------
+📞 Outbound call answered. Host for Stream: nonlubricious-bennett-duskily.ngrok-free.dev, Business: c39a32dd-3045-4a1e-8265-a21315b9427d
+📢 Generated TwiML: <?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="wss://nonlubricious-bennett-duskily.ngrok-free.dev/voice-stream"><Parameter name="business_id" value="c39a32dd-3045-4a1e-8265-a21315b9427d" /><Parameter name="is_outbound" value="true" /></Stream></Connect></Response>
+🔌 WebSocket connected for Clinic: c39a32dd-3045-4a1e-8265-a21315b9427d (Outbound: True)
+🔌 WebSocket connected for Clinic: test (Outbound: True)
+--- Inbound Headers ---
+host: nonlubricious-bennett-duskily.ngrok-free.dev
+user-agent: TwilioProxy/1.1
+content-length: 567
+accept: */*
+content-type: application/x-www-form-urlencoded; charset=UTF-8
+i-twilio-idempotency-token: 62792bbe-d818-467a-b0ee-21ed5d757b34
+x-forwarded-for: 32.192.75.127
+x-forwarded-host: nonlubricious-bennett-duskily.ngrok-free.dev
+x-forwarded-proto: https
+x-home-region: us1
+x-twilio-answertimeout: PT15S
+x-twilio-answertimeout: PT15S
+x-twilio-service-flow-event: %7B%22flow_id%22%3A%22RQfbd7332bffe15cb3f322d5b6f54721b1%22%2C%22type%22%3A%22api_event%22%2C%22action%22%3A%22twiml_fetch%22%2C%22sub_action%22%3A%22completed%22%2C%22result%22%3A%22success%22%2C%22metadata%22%3A%7B%22transfer_type%22%3A%22call_transfer_url%22%7D%7D
+x-twilio-signature: WRFIcaJ+bw6tKamNLYHbhtoz0Tc=
+accept-encoding: gzip
+----------------------
+📞 Outbound call answered. Host for Stream: nonlubricious-bennett-duskily.ngrok-free.dev, Business: c39a32dd-3045-4a1e-8265-a21315b9427d
+📢 Generated TwiML: <?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="wss://nonlubricious-bennett-duskily.ngrok-free.dev/voice-stream"><Parameter name="business_id" value="c39a32dd-3045-4a1e-8265-a21315b9427d" /><Parameter name="is_outbound" value="true" /><Parameter name="caller" value="+918801260321" /></Stream></Connect></Response>
+🔌 WebSocket connected for Clinic: c39a32dd-3045-4a1e-8265-a21315b9427d (Outbound: True)
+--- Inbound Headers ---
+host: nonlubricious-bennett-duskily.ngrok-free.dev
+user-agent: TwilioProxy/1.1
+content-length: 567
+accept: */*
+content-type: application/x-www-form-urlencoded; charset=UTF-8
+i-twilio-idempotency-token: fe712e2e-c25e-4123-ba0c-20bf3aa8ee08
+x-forwarded-for: 98.83.207.202
+x-forwarded-host: nonlubricious-bennett-duskily.ngrok-free.dev
+x-forwarded-proto: https
+x-home-region: us1
+x-twilio-answertimeout: PT15S
+x-twilio-answertimeout: PT15S
+x-twilio-service-flow-event: %7B%22flow_id%22%3A%22RQfd163cc251279bb2e94422d274687705%22%2C%22type%22%3A%22api_event%22%2C%22action%22%3A%22twiml_fetch%22%2C%22sub_action%22%3A%22completed%22%2C%22result%22%3A%22success%22%2C%22metadata%22%3A%7B%22transfer_type%22%3A%22call_transfer_url%22%7D%7D
+x-twilio-signature: +IXtq2UhcHi5EoGzaATGKFVPnN8=
+accept-encoding: gzip
+----------------------
+📞 Outbound call answered. Host for Stream: nonlubricious-bennett-duskily.ngrok-free.dev, Business: c39a32dd-3045-4a1e-8265-a21315b9427d
+📢 Generated TwiML: <?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="wss://nonlubricious-bennett-duskily.ngrok-free.dev/voice-stream"><Parameter name="business_id" value="c39a32dd-3045-4a1e-8265-a21315b9427d" /><Parameter name="is_outbound" value="true" /><Parameter name="caller" value="+918801260321" /></Stream></Connect></Response>
+🔌 WebSocket connected for Clinic: c39a32dd-3045-4a1e-8265-a21315b9427d (Outbound: True)

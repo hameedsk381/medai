@@ -7,6 +7,7 @@ from typing import Optional, Dict
 from twilio.rest import Client
 from twilio.twiml.voice_response import VoiceResponse, Gather
 from datetime import datetime
+from ..utils.safe_print import safe_print as print
 
 
 class TwilioService:
@@ -60,6 +61,48 @@ class TwilioService:
         
         # Fallback
         response.say("Thank you. We are processing your request. Goodbye!", language="en")
+        
+        return str(response)
+
+    def generate_stream_twiml(
+        self,
+        host: str,
+        business_id: str = "default",
+        is_outbound: bool = False,
+        caller_phone: Optional[str] = None
+    ) -> str:
+        """
+        Generate TwiML to stream call audio to a WebSocket
+        
+        Args:
+            host: WebSocket host URL (domain only)
+            business_id: Tenant identifier
+            is_outbound: Whether this is an outbound call
+            
+        Returns:
+            TwiML XML string
+        """
+        from twilio.twiml.voice_response import VoiceResponse, Connect, Stream
+        
+        response = VoiceResponse()
+        
+        # Start streaming
+        # Use Twilio <Parameter> tags instead of query strings for robustness
+        stream_url = f"wss://{host}/voice-stream"
+        
+        connect = Connect()
+        stream = Stream(url=stream_url)
+        
+        # Add custom parameters
+        stream.parameter(name="business_id", value=business_id)
+        if is_outbound:
+            stream.parameter(name="is_outbound", value="true")
+        if caller_phone:
+            stream.parameter(name="caller", value=caller_phone)
+        
+        # CRITICAL: Stream must be INSIDE Connect, not a sibling
+        connect.append(stream)
+        response.append(connect)
         
         return str(response)
     
@@ -298,3 +341,35 @@ Reference: {task.get('id', 'N/A')[:8]}""",
         # Twilio recording URLs are available at:
         base_url = "https://api.twilio.com"
         return f"{base_url}{recording.uri.replace('.json', '.mp3')}"
+
+    async def initiate_outbound_call(
+        self,
+        to_phone: str,
+        callback_url: str
+    ) -> Optional[str]:
+        """
+        Trigger an outbound call from the AI agent
+        
+        Args:
+            to_phone: Recipient phone number
+            callback_url: Webhook URL for Twilio to fetch TwiML upon answer
+            
+        Returns:
+            Call SID or None if failed
+        """
+        if not self.client:
+            print(f"⚠️ Simulation: Triggered outbound call to {to_phone} via {callback_url}")
+            return "simulated_call_sid"
+
+        try:
+            call = self.client.calls.create(
+                to=to_phone,
+                from_=self.phone_number,
+                url=callback_url,
+                machine_detection='Enable' # Detect voicemail vs human
+            )
+            print(f"📡 Outbound call initiated: {call.sid}")
+            return call.sid
+        except Exception as e:
+            print(f"❌ Failed to initiate outbound call to {to_phone}: {e}")
+            return None
