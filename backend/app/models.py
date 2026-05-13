@@ -1,6 +1,6 @@
 from enum import Enum
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 
 
@@ -192,3 +192,21 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     email: Optional[str] = None
     business_id: Optional[str] = None
+
+
+class WhatsAppCampaign(BaseModel):
+    id: str
+    business_id: str
+    name: str
+    message_template: str
+    status: str
+    created_at: datetime
+    sent_at: Optional[datetime] = None
+    total_recipients: int
+    success_count: int
+    failure_count: int
+
+class CampaignCreate(BaseModel):
+    name: str
+    message_template: str
+    recipient_phones: List[str]  # Individual phone numbers or keywords like "all_patients"

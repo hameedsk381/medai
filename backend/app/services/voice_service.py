@@ -1,7 +1,6 @@
 """
 Voice Service - Handles post-call transcription and analytics
-Migrated to Sarvam AI Batch API (Speech-to-Text-Translate) with Diarization
-and Call Analytics processing as per the official Sarvam cookbook.
+Uses Google Gemini for both audio transcription and call analytics.
 """
 import os
 import json
@@ -11,7 +10,8 @@ import asyncio
 import textwrap
 from pathlib import Path
 from typing import Optional, List, Dict, Tuple
-from sarvamai import SarvamAI
+from google import genai
+from google.genai import types
 from ..utils.safe_print import safe_print as print
 
 ANALYSIS_PROMPT_TEMPLATE = """
@@ -36,26 +36,26 @@ Provide your answer in a clear, structured format with section headings and bull
 """
 
 class VoiceService:
-    """Service for voice transcription and call analytics processing"""
+    """Service for voice transcription and call analytics processing using Gemini"""
     
     def __init__(self):
-        """Initialize the service with Sarvam AI client"""
-        self.api_key = os.getenv("SARVAM_API_KEY")
+        """Initialize the service with Gemini client"""
+        self.api_key = os.getenv("GEMINI_API_KEY")
         if not self.api_key:
-            print("WARNING: SARVAM_API_KEY not set. Post-call analytics will fail.")
+            print("WARNING: GEMINI_API_KEY not set. Post-call analytics will fail.")
             self.client = None
         else:
-            self.client = SarvamAI(api_subscription_key=self.api_key)
+            self.client = genai.Client(api_key=self.api_key)
             self.output_dir = Path("outputs")
             self.output_dir.mkdir(exist_ok=True)
-            print("✅ Sarvam Call Analytics initialized for post-call processing")
+            print("✅ Gemini Call Analytics initialized for post-call processing")
     
     async def transcribe_audio(self, audio_url: str, language: str = "en") -> str:
         """
-        Transcribe audio from URL using Sarvam Batch API and generate analytics
+        Transcribe audio from URL using Gemini and generate analytics
         """
         if not self.client:
-            raise Exception("Sarvam API key not configured. Please add SARVAM_API_KEY to backend/.env")
+            raise Exception("GEMINI_API_KEY not configured. Please add it to .env")
         
         try:
             # Download audio file
@@ -69,10 +69,31 @@ class VoiceService:
             with open(temp_file, "wb") as f:
                 f.write(audio_data)
             
-            print(f"📥 Downloaded recording from Twilio, kicking off Sarvam Analytics...")
+            print(f"📥 Downloaded recording, starting Gemini transcription...")
             
-            # Execute the heavy batch process in a separate thread so we don't block FastAPI
-            transcript, analysis = await asyncio.to_thread(self._process_call_recording, temp_file)
+            # Transcribe with Gemini
+            transcript = await self._transcribe_with_gemini(audio_data, "audio/mpeg")
+            
+            # Generate analytics
+            if transcript:
+                analysis = await self._analyze_transcription(transcript)
+                
+                # Save outputs
+                job_dir = self.output_dir / f"transcriptions_gemini"
+                job_dir.mkdir(parents=True, exist_ok=True)
+                
+                import uuid
+                file_id = str(uuid.uuid4())[:8]
+                
+                txt_path = job_dir / f"{file_id}_conversation.txt"
+                with open(txt_path, "w", encoding="utf-8") as f:
+                    f.write(transcript)
+                
+                if analysis:
+                    analysis_path = job_dir / f"{file_id}_analysis.txt"
+                    with open(analysis_path, "w", encoding="utf-8") as f:
+                        f.write(analysis.strip())
+                    print(f"📊 Analytics saved to {analysis_path}")
             
             # Clean up
             try:
@@ -86,116 +107,86 @@ class VoiceService:
         except Exception as e:
             print(f"Transcription failed: {e}")
             raise Exception(f"Failed to transcribe audio: {str(e)}")
+    
+    async def _transcribe_with_gemini(self, audio_bytes: bytes, mime_type: str = "audio/wav") -> str:
+        """Transcribe audio using Gemini's multimodal audio understanding"""
+        try:
+            response = await self.client.aio.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=[
+                    textwrap.dedent("""
+                    Transcribe this audio recording precisely. 
+                    If multiple speakers are detected, label them as SPEAKER_00, SPEAKER_01, etc.
+                    Format: Each speaker turn on a new line as "SPEAKER_XX: <text>"
+                    If only one speaker, just provide the transcript text.
+                    Return ONLY the transcript, no commentary.
+                    """).strip(),
+                    types.Part.from_bytes(
+                        data=audio_bytes,
+                        mime_type=mime_type,
+                    )
+                ],
+                config=types.GenerateContentConfig(
+                    temperature=0.0,
+                ),
+            )
             
-    def _process_call_recording(self, file_path: str) -> Tuple[str, str]:
-        """Synchronous process: Uploads to Batch API, waits, diarizes and analyzes."""
-        # 1. Create Batch Job with Diarization
-        job = self.client.speech_to_text_translate_job.create_job(
-            model="saaras:v3",
-            mode="translate",
-            with_diarization=True,
-        )
-        
-        job.upload_files(file_paths=[file_path], timeout=300)
-        job.start()
-        
-        print(f"⏳ Waiting for Sarvam Batch Job {job.job_id} to complete...")
-        job.wait_until_complete()
-        
-        if job.is_failed():
-            raise Exception("Transcription job failed at Sarvam API.")
+            return response.text.strip() if response.text else ""
             
-        # 2. Download and Parse JSON Output
-        job_dir = self.output_dir / f"transcriptions_{job.job_id}"
-        job_dir.mkdir(parents=True, exist_ok=True)
-        job.download_outputs(output_dir=str(job_dir))
-        
-        json_files = list(job_dir.glob("*.json"))
-        if not json_files:
-            raise FileNotFoundError(f"No .json transcription files found in {job_dir}.")
-            
-        json_file = json_files[0]
-        file_name = json_file.stem
-        
-        with open(json_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            
-        diarized = data.get("diarized_transcript", {}).get("entries")
-        lines = []
-        speaker_times = {}
-        
-        if diarized:
-            for entry in diarized:
-                speaker = entry["speaker_id"]
-                text = entry["transcript"]
-                lines.append(f"{speaker}: {text}")
-                
-                # Time tracking
-                start = entry.get("start_time_seconds")
-                end = entry.get("end_time_seconds")
-                if start is not None and end is not None:
-                    duration = end - start
-                    speaker_times[speaker] = speaker_times.get(speaker, 0.0) + duration
-        else:
-            lines = [f"UNKNOWN: {data.get('transcript', '')}"]
-            
-        conversation_text = "\n".join(lines)
-        
-        # 3. Save Parsed Files (Transcript + Timing)
-        txt_path = job_dir / f"{file_name}_conversation.txt"
-        with open(txt_path, "w", encoding="utf-8") as f:
-            f.write(conversation_text)
-            
-        if speaker_times:
-            timing_path = job_dir / f"{file_name}_timing.json"
-            with open(timing_path, "w", encoding="utf-8") as f:
-                json.dump(speaker_times, f, indent=2)
-                
-        # 4. Generate LLM Analytics
-        analysis = self._analyze_transcription(conversation_text, job_dir, file_name)
-        
-        return conversation_text, analysis
-        
-    def _analyze_transcription(self, transcription: str, output_dir: Path, file_name: str) -> str:
-        """Call Sarvam Chat API to generate post-call analytics report"""
+        except Exception as e:
+            print(f"❌ Gemini transcription error: {e}")
+            return ""
+    
+    async def _analyze_transcription(self, transcription: str) -> str:
+        """Generate post-call analytics using Gemini"""
         analysis_prompt = textwrap.dedent(ANALYSIS_PROMPT_TEMPLATE.format(transcription=transcription))
-        messages = [
-            {
-                "role": "system", 
-                "content": "You are a call analytics expert working for a healthcare clinic's support operations team. Your job is to understand patient calls end-to-end and provide structured insights."
-            },
-            {
-                "role": "user", 
-                "content": analysis_prompt
-            },
-        ]
         
         try:
-            response = self.client.chat.completions(messages=messages)
-            analysis = response.choices[0].message.content
+            response = await self.client.aio.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=analysis_prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction="You are a call analytics expert working for a healthcare clinic's support operations team. Your job is to understand patient calls end-to-end and provide structured insights.",
+                    temperature=0.3,
+                ),
+            )
             
-            analysis_path = output_dir / f"{file_name}_analysis.txt"
-            with open(analysis_path, "w", encoding="utf-8") as f:
-                f.write(analysis.strip())
-            print(f"📊 Analytics saved to {analysis_path}")
-            return analysis
+            return response.text.strip() if response.text else ""
+            
         except Exception as e:
-            print(f"Error generating call analytics: {e}")
+            print(f"❌ Error generating call analytics: {e}")
             return ""
             
     async def transcribe_file(self, file_path: str) -> str:
-        """Transcribe local audio file via Batch API"""
+        """Transcribe local audio file using Gemini"""
         if not self.client:
-            raise Exception("Sarvam API key not configured.")
+            raise Exception("GEMINI_API_KEY not configured.")
         
         try:
-            transcript, _ = await asyncio.to_thread(self._process_call_recording, file_path)
+            with open(file_path, "rb") as f:
+                audio_bytes = f.read()
+            
+            # Detect mime type from extension
+            ext = os.path.splitext(file_path)[1].lower()
+            mime_map = {
+                ".mp3": "audio/mpeg",
+                ".wav": "audio/wav",
+                ".m4a": "audio/mp4",
+                ".ogg": "audio/ogg",
+                ".webm": "audio/webm",
+                ".amr": "audio/amr",
+                ".flac": "audio/flac",
+            }
+            mime_type = mime_map.get(ext, "audio/wav")
+            
+            transcript = await self._transcribe_with_gemini(audio_bytes, mime_type)
             return transcript
+            
         except Exception as e:
             print(f"Transcription failed: {e}")
             raise Exception(f"Failed to transcribe audio: {str(e)}")
     
     def validate_audio_format(self, filename: str) -> bool:
         """Validate audio file format"""
-        valid_extensions = [".mp3", ".wav", ".m4a", ".ogg", ".webm", ".amr"]
+        valid_extensions = [".mp3", ".wav", ".m4a", ".ogg", ".webm", ".amr", ".flac"]
         return any(filename.lower().endswith(ext) for ext in valid_extensions)

@@ -1,11 +1,12 @@
 """
 Intent Service - Extracts intent and entities from voice transcriptions
-Uses Groq API for ultra-fast inference with Llama 3 models
+Uses Google Gemini API for fast, high-quality inference
 """
 import os
 import json
 from typing import Dict, Optional
-from groq import AsyncGroq
+from google import genai
+from google.genai import types
 from ..utils.safe_print import safe_print as print
 
 
@@ -13,12 +14,15 @@ class IntentService:
     """Service for extracting intent and entities from transcriptions"""
     
     def __init__(self):
-        """Initialize the service with Groq client"""
-        api_key = os.getenv("GROQ_API_KEY")
+        """Initialize the service with Gemini client"""
+        api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
-            print("WARNING: GROQ_API_KEY not set. Please add it to backend/.env")
-            print("Get your free key at: https://console.groq.com/keys")
-        self.client = AsyncGroq(api_key=api_key) if api_key else None
+            print("WARNING: GEMINI_API_KEY not set. Please add it to .env")
+            print("Get your key at: https://aistudio.google.com/apikey")
+            self.client = None
+        else:
+            self.client = genai.Client(api_key=api_key)
+            print("✅ Intent service (Gemini) initialized")
     
     SUPPORTED_INTENTS = [
         "Prescription Renewal",
@@ -32,7 +36,7 @@ class IntentService:
     
     async def extract_intent(self, transcript: str) -> Dict:
         """
-        Extract intent and entities from transcript using Groq (Llama 3)
+        Extract intent and entities from transcript using Gemini
         
         Returns:
             {
@@ -86,17 +90,17 @@ If any field is not mentioned, use null for optional fields."""
         user_prompt = f"Customer transcript: {transcript}"
         
         try:
-            response = await self.client.chat.completions.create(
-                model="llama-3.3-70b-versatile",  # Ultra-fast Groq model
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=0.3,  # Low temperature for consistent extraction
-                response_format={"type": "json_object"}
+            response = await self.client.aio.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=user_prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                    temperature=0.3,
+                    response_mime_type="application/json",
+                ),
             )
             
-            result = json.loads(response.choices[0].message.content)
+            result = json.loads(response.text)
             
             # Validate and normalize
             if result["intent"] not in self.SUPPORTED_INTENTS:

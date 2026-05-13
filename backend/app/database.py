@@ -220,3 +220,32 @@ class ClinicKnowledgeDB(Base):
     key = Column(String, nullable=False)       # 'phone', 'address', 'cancellation_policy', etc.
     value = Column(String, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class WhatsAppCampaignDB(Base):
+    """Database model for WhatsApp marketing/notification campaigns"""
+    __tablename__ = "whatsapp_campaigns"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    business_id = Column(String, index=True, nullable=False)
+    name = Column(String, nullable=False)
+    message_template = Column(Text, nullable=False)
+    status = Column(String, default="pending")  # pending, sending, completed, failed
+    created_at = Column(DateTime, default=datetime.utcnow)
+    sent_at = Column(DateTime, nullable=True)
+    total_recipients = Column(Integer, default=0)
+    success_count = Column(Integer, default=0)
+    failure_count = Column(Integer, default=0)
+
+
+class CampaignRecipientDB(Base):
+    """Database model for individual campaign delivery status"""
+    __tablename__ = "campaign_recipients"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    campaign_id = Column(String, index=True, nullable=False)
+    phone_number = Column(String, nullable=False)
+    status = Column(String, default="pending")  # pending, sent, failed
+    error_message = Column(Text, nullable=True)
+    message_sid = Column(String, nullable=True)
+    sent_at = Column(DateTime, nullable=True)

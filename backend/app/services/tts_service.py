@@ -1,59 +1,53 @@
 """
-Sarvam AI Text-to-Speech Service (Bulbul v3)
-============================================
-Primary TTS engine with native Indian language support.
-Falls back to Groq Orpheus if SARVAM_API_KEY is not configured.
+Gemini Text-to-Speech Service
+===============================
+Uses Gemini 2.5 Flash Preview TTS for natural speech synthesis.
+Supports chunked streaming for low-latency voice responses.
 
-Bulbul v3 Features:
-- 30+ natural Indian voices
-- 11 languages (10 Indian + English)
-- Native 8kHz output (Twilio-compatible, no ffmpeg needed!)
-- Adjustable speed (0.5x-2.0x)
+Features:
+- 30 prebuilt voices
+- Natural, expressive speech
+- Multi-language support
+- 24kHz PCM output (converted to WAV for pipeline compatibility)
 """
 
 import asyncio
-import base64
+import io
 import os
 import re
+import wave
 from typing import AsyncGenerator, List, Optional
 
-import httpx
+from google import genai
+from google.genai import types
 from ..utils.safe_print import safe_print as print
 
 
 class TTSService:
-    """Text-to-speech service with low-latency chunked synthesis."""
+    """Text-to-speech service using Gemini TTS."""
 
     def __init__(self):
-        self.sarvam_key = os.getenv("SARVAM_API_KEY")
-        self.groq_key = os.getenv("GROQ_API_KEY")
-
-        self.sarvam_url = "https://api.sarvam.ai/text-to-speech"
-        self.groq_url = "https://api.groq.com/openai/v1/audio/speech"
-
-        self.sarvam_model = "bulbul:v3"
-        self.sarvam_speaker = "priya"
-        self.sarvam_language = "en-IN"
+        self.gemini_key = os.getenv("GEMINI_API_KEY")
+        self.client = None
+        self.voice_name = os.getenv("GEMINI_TTS_VOICE", "Kore")
         self.max_chunk_chars = int(os.getenv("TTS_MAX_CHARS", "220"))
 
-        self.client = httpx.AsyncClient(timeout=30.0)
-
-        if self.sarvam_key:
-            print("Sarvam TTS (Bulbul v3) initialized")
-        elif self.groq_key:
-            print("Sarvam TTS not configured, using Groq Orpheus fallback")
+        if self.gemini_key:
+            self.client = genai.Client(api_key=self.gemini_key)
+            print(f"✅ Gemini TTS initialized (voice: {self.voice_name})")
         else:
-            print("No TTS API key configured!")
+            print("⚠️ GEMINI_API_KEY not set. TTS will not work.")
 
     async def generate_speech_stream(self, text: str, language: str = "en-IN") -> AsyncGenerator[bytes, None]:
         """
-        Generate speech audio from text.
+        Generate speech audio from text using Gemini TTS.
 
-        The provider returns full clips, so we reduce first-audio latency by
-        splitting long responses into smaller chunks and prefetching the next
-        clip while the current one is playing.
+        Splits long text into sentence-sized chunks and prefetches
+        the next clip while the current one plays for low latency.
         """
         if not text or not text.strip():
+            return
+        if not self.client:
             return
 
         text_chunks = self.split_text_for_streaming(
@@ -63,19 +57,12 @@ class TTSService:
         if not text_chunks:
             return
 
-        if self.sarvam_key:
-            async def synthesize(chunk_text: str) -> Optional[bytes]:
-                return await self._synthesize_sarvam(chunk_text, language)
-        elif self.groq_key:
-            synthesize = self._synthesize_groq_fallback
-        else:
-            return
-
-        pending_audio = asyncio.create_task(synthesize(text_chunks[0]))
+        # Prefetch pipeline for low latency
+        pending_audio = asyncio.create_task(self._synthesize_gemini(text_chunks[0]))
 
         for next_chunk in text_chunks[1:]:
             audio_bytes = await pending_audio
-            pending_audio = asyncio.create_task(synthesize(next_chunk))
+            pending_audio = asyncio.create_task(self._synthesize_gemini(next_chunk))
 
             if audio_bytes and len(audio_bytes) > 100:
                 yield audio_bytes
@@ -183,73 +170,50 @@ class TTSService:
 
         return chunks
 
-    async def _synthesize_sarvam(self, text: str, language: str = "en-IN") -> Optional[bytes]:
-        """Synthesize one chunk with Sarvam."""
-        headers = {
-            "api-subscription-key": self.sarvam_key,
-            "Content-Type": "application/json"
-        }
-
-        data = {
-            "inputs": [text],
-            "target_language_code": language,
-            "model": self.sarvam_model,
-            "speaker": self.sarvam_speaker,
-            "sample_rate": 8000,
-            "enable_preprocessing": True,
-            "speech_speed": 1.0
-        }
+    async def _synthesize_gemini(self, text: str) -> Optional[bytes]:
+        """Synthesize one chunk with Gemini TTS, returning WAV bytes."""
+        if not self.client:
+            return None
 
         try:
-            response = await self.client.post(self.sarvam_url, json=data, headers=headers)
+            response = await self.client.aio.models.generate_content(
+                model="gemini-2.5-flash-preview-tts",
+                contents=f"Say in a professional, warm tone: {text}",
+                config=types.GenerateContentConfig(
+                    response_modalities=["AUDIO"],
+                    speech_config=types.SpeechConfig(
+                        voice_config=types.VoiceConfig(
+                            prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                                voice_name=self.voice_name,
+                            )
+                        )
+                    ),
+                ),
+            )
 
-            if response.status_code != 200:
-                print(f"Sarvam TTS error {response.status_code}: {response.text[:300]}")
-                return None
+            # Extract PCM audio data from response
+            if (response.candidates and 
+                response.candidates[0].content and 
+                response.candidates[0].content.parts):
+                
+                pcm_data = response.candidates[0].content.parts[0].inline_data.data
+                
+                if pcm_data and len(pcm_data) > 100:
+                    # Convert raw PCM to WAV (24kHz, 16-bit, mono)
+                    wav_buffer = io.BytesIO()
+                    with wave.open(wav_buffer, "wb") as wf:
+                        wf.setnchannels(1)
+                        wf.setsampwidth(2)  # 16-bit
+                        wf.setframerate(24000)
+                        wf.writeframes(pcm_data)
+                    
+                    return wav_buffer.getvalue()
 
-            result = response.json()
-            audios = result.get("audios", [])
-            if audios:
-                return base64.b64decode(audios[0])
-
-        except httpx.ReadTimeout:
-            print("Sarvam TTS timeout")
         except Exception as error:
-            print(f"Sarvam TTS error: {error}")
-
-        return None
-
-    async def _synthesize_groq_fallback(self, text: str) -> Optional[bytes]:
-        """Synthesize one chunk with Groq fallback."""
-        headers = {
-            "Authorization": f"Bearer {self.groq_key}",
-            "Content-Type": "application/json"
-        }
-
-        data = {
-            "model": "canopylabs/orpheus-v1-english",
-            "input": text,
-            "voice": "daniel",
-            "response_format": "wav"
-        }
-
-        try:
-            response = await self.client.post(self.groq_url, json=data, headers=headers)
-
-            if response.status_code != 200:
-                print(f"Groq TTS error {response.status_code}: {response.text[:300]}")
-                return None
-
-            return response.content
-
-        except httpx.ReadTimeout:
-            print("Groq TTS timeout")
-        except Exception as error:
-            print(f"Groq TTS error: {error}")
+            print(f"❌ Gemini TTS error: {error}")
 
         return None
 
     async def close(self):
-        if self.client:
-            await self.client.aclose()
-            self.client = None
+        """Cleanup (no persistent connections with Gemini)"""
+        self.client = None

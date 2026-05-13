@@ -16,7 +16,7 @@ from app.database import init_db, get_db
 from app.models import (
     TaskStatus, UrgencyLevel, Token, TokenData, UserCreate,
     Doctor, Patient, Appointment, ConversationSession,
-    ClinicKnowledge, ClinicKnowledgeCreate
+    ClinicKnowledge, ClinicKnowledgeCreate, WhatsAppCampaign, CampaignCreate
 )
 from app.services.auth_service import AuthService
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -26,6 +26,7 @@ from app.services.realtime_pipeline import RealtimeVoicePipeline
 from app.services.web_pipeline import WebVoicePipeline
 from app.utils.safe_print import safe_print as print
 import json
+import base64
 
 load_dotenv()
 
@@ -582,6 +583,84 @@ async def get_worker_stats(business_id: str = Depends(get_current_business)):
 
 
 # ============================================
+# WhatsApp Campaign API
+# ============================================
+
+@app.post("/api/campaigns", response_model=WhatsAppCampaign)
+async def create_campaign(
+    campaign_data: CampaignCreate,
+    business_id: str = Depends(get_current_business),
+    db: AsyncSession = Depends(get_db)
+):
+    """Create a new WhatsApp campaign"""
+    from app.services.campaign_service import CampaignService
+    service = CampaignService(db)
+    campaign = await service.create_campaign(
+        business_id=business_id,
+        name=campaign_data.name,
+        message_template=campaign_data.message_template,
+        recipient_phones=campaign_data.recipient_phones
+    )
+    return campaign
+
+@app.get("/api/campaigns", response_model=List[WhatsAppCampaign])
+async def get_campaigns(
+    business_id: str = Depends(get_current_business),
+    db: AsyncSession = Depends(get_db)
+):
+    """List all WhatsApp campaigns for clinic"""
+    from app.services.campaign_service import CampaignService
+    service = CampaignService(db)
+    return await service.get_campaigns(business_id)
+
+@app.get("/api/campaigns/{campaign_id}")
+async def get_campaign_details(
+    campaign_id: str,
+    business_id: str = Depends(get_current_business),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get detailed status of a campaign and its recipients"""
+    from app.services.campaign_service import CampaignService
+    service = CampaignService(db)
+    details = await service.get_campaign_details(campaign_id)
+    if not details or details["campaign"].business_id != business_id:
+        raise HTTPException(404, "Campaign not found")
+    return details
+
+@app.post("/api/campaigns/{campaign_id}/run")
+async def run_campaign(
+    campaign_id: str,
+    background_tasks: BackgroundTasks,
+    business_id: str = Depends(get_current_business),
+    db: AsyncSession = Depends(get_db)
+):
+    """Trigger the execution of a campaign in the background"""
+    from app.services.campaign_service import CampaignService
+    service = CampaignService(db)
+    
+    # Verify ownership
+    details = await service.get_campaign_details(campaign_id)
+    if not details or details["campaign"].business_id != business_id:
+        raise HTTPException(404, "Campaign not found")
+        
+    if details["campaign"].status == "sending":
+        return {"message": "Campaign is already running"}
+        
+    # Trigger background task
+    # Note: We need a new session for the background task as the current one will close
+    from app.database import AsyncSessionLocal
+    
+    async def run_bg_campaign(cid):
+        async with AsyncSessionLocal() as bg_db:
+            bg_service = CampaignService(bg_db)
+            await bg_service.run_campaign(cid)
+
+    background_tasks.add_task(run_bg_campaign, campaign_id)
+    
+    return {"message": "Campaign started in background"}
+
+
+# ============================================
 # PHASE 2: Twilio Webhook Endpoints
 # ============================================
 
@@ -787,12 +866,9 @@ async def web_websocket_endpoint(websocket: WebSocket):
             message = await websocket.receive_text()
             data = json.loads(message)
             
-            if data['event'] == 'media':
-                pass # Backend STT disabled for web. Using Web Speech API.
-            
-            elif data['event'] == 'transcript_input':
-                is_final = data.get('is_final', False)
-                await pipeline.process_transcript_input(data['payload'], is_final)
+            if data['event'] == 'audio_input':
+                audio_payload = base64.b64decode(data['payload'])
+                await pipeline.process_audio_chunk(audio_payload)
             
             elif data['event'] == 'stop':
                 break

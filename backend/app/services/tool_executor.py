@@ -18,18 +18,26 @@ class ToolExecutor:
         self.task_service = TaskService()
         
     async def execute(self, tool_call: Any) -> Dict[str, Any]:
-        """Route tool calls for execution"""
-        function = getattr(tool_call, "function", None)
-        if function is not None:
-            name = function.name
-            raw_args = function.arguments
+        """Route tool calls for execution. Supports both Gemini and OpenAI/Groq formats."""
+        # Gemini format: function_call with .name and .args (dict)
+        if hasattr(tool_call, "name") and hasattr(tool_call, "args"):
+            name = tool_call.name
+            args = dict(tool_call.args) if tool_call.args else {}
             tool_call_id = getattr(tool_call, "id", "")
-        else:
-            name = tool_call["function"]["name"]
-            raw_args = tool_call["function"]["arguments"]
+        # OpenAI/Groq format: tool_call with .function.name and .function.arguments (JSON string)
+        elif hasattr(tool_call, "function") and getattr(tool_call, "function", None) is not None:
+            function = tool_call.function
+            name = function.name
+            args = json.loads(function.arguments)
+            tool_call_id = getattr(tool_call, "id", "")
+        # Dict format fallback
+        elif isinstance(tool_call, dict):
+            name = tool_call.get("function", {}).get("name", tool_call.get("name", "unknown"))
+            raw_args = tool_call.get("function", {}).get("arguments", tool_call.get("args", "{}"))
+            args = json.loads(raw_args) if isinstance(raw_args, str) else dict(raw_args)
             tool_call_id = tool_call.get("id", "")
-
-        args = json.loads(raw_args)
+        else:
+            return {"tool_call_id": "", "output": json.dumps({"status": "error", "message": "Unrecognized tool_call format"})}
         
         print(f"🛠️ Executing tool: {name} (Args: {args})")
         

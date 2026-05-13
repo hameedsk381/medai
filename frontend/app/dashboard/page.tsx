@@ -28,7 +28,8 @@ import {
     Command,
     Terminal,
     Wind,
-    Radio
+    Radio,
+    Send
 } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 

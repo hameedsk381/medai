@@ -38,9 +38,9 @@ export default function VoiceInterface({ wsUrl, token }: VoiceInterfaceProps) {
             socketRef.current = socket;
 
             socket.onopen = () => {
-                console.log('Connected to Web Voice Stream');
+                console.log('Connected to Web Voice Stream (Gemini AI)');
                 setIsActive(true);
-                setTranscript(prev => [...prev, { text: "Connected! You can start talking.", role: "system" }]);
+                setTranscript(prev => [...prev, { text: "Connected! Gemini STT is active.", role: "system" }]);
                 setupAudioProcessing(stream);
             };
 
@@ -50,13 +50,11 @@ export default function VoiceInterface({ wsUrl, token }: VoiceInterfaceProps) {
                 if (data.event === 'transcript') {
                     setTranscript(prev => {
                         const last = prev[prev.length - 1];
-                        // If it's a user turn and the last message was a non-final user message, replace it
                         if (last && last.role === data.role && data.role === 'user' && !last.is_final) {
                             const updated = [...prev];
                             updated[updated.length - 1] = { text: data.text, role: data.role, is_final: data.is_final };
                             return updated;
                         }
-                        // Otherwise (assistant or new user turn), add as new
                         return [...prev, { text: data.text, role: data.role, is_final: data.is_final }];
                     });
                     if (data.role === 'user' && data.is_final) setIsThinking(true);
@@ -110,33 +108,45 @@ export default function VoiceInterface({ wsUrl, token }: VoiceInterfaceProps) {
 
         audioQueue.current = [];
         isPlaying.current = false;
-
-        if ((window as any).currentRecognition) {
-            try {
-                (window as any).currentRecognition.stop();
-            } catch (e) { }
-            (window as any).currentRecognition = null;
-        }
     };
 
     const setupAudioProcessing = (stream: MediaStream) => {
+        // Create audio context at 16kHz for uniform processing
         const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
         audioContextRef.current = audioContext;
 
         const source = audioContext.createMediaStreamSource(stream);
-        // Reduce buffer size for lower latency (2048 samples = ~128ms at 16kHz)
-        const processor = audioContext.createScriptProcessor(2048, 1, 1);
+        // ScriptProcessor size 4096 gives us ~256ms of audio per chunk at 16kHz
+        const processor = audioContext.createScriptProcessor(4096, 1, 1);
         processorRef.current = processor;
 
         const analyser = audioContext.createAnalyser();
         source.connect(analyser);
 
         processor.onaudioprocess = (e) => {
-            if (!isActive || isMuted) return;
+            if (!isActive || isMuted || !socketRef.current) return;
 
             const inputData = e.inputBuffer.getChannelData(0);
+            
+            // 1. Send Audio Chunks to Backend for Gemini STT
+            // Convert Float32Array to Int16Array PCM
+            const pcmData = new Int16Array(inputData.length);
+            for (let i = 0; i < inputData.length; i++) {
+                pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
+            }
+            
+            // Convert to base64 for payload (or send as binary)
+            // Sending as JSON payload for consistency with existing web pipeline
+            const base64Audio = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
+            
+            if (socketRef.current.readyState === WebSocket.OPEN) {
+                socketRef.current.send(JSON.stringify({
+                    event: 'audio_input',
+                    payload: base64Audio
+                }));
+            }
 
-            // Analyze volume for UI
+            // 2. Analyze volume for UI
             let sum = 0;
             for (let i = 0; i < inputData.length; i++) sum += inputData[i] * inputData[i];
             setVolume(Math.sqrt(sum / inputData.length));
@@ -144,61 +154,6 @@ export default function VoiceInterface({ wsUrl, token }: VoiceInterfaceProps) {
 
         source.connect(processor);
         processor.connect(audioContext.destination);
-
-        // Native Web Speech API
-        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            const recognition = new SpeechRecognition();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            recognition.lang = 'en-US'; // Or match the user's language setting
-
-            recognition.onresult = (event: any) => {
-                if (!isActive || isMuted) return;
-
-                let interimTranscript = '';
-                let finalTranscript = '';
-
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        finalTranscript += event.results[i][0].transcript;
-                    } else {
-                        interimTranscript += event.results[i][0].transcript;
-                    }
-                }
-
-                const text = (finalTranscript || interimTranscript).trim();
-                const isFinal = finalTranscript.length > 0;
-
-                if (text && socketRef.current?.readyState === WebSocket.OPEN) {
-                    socketRef.current.send(JSON.stringify({
-                        event: 'transcript_input',
-                        payload: text,
-                        is_final: isFinal
-                    }));
-                }
-            };
-
-            recognition.onerror = (event: any) => {
-                console.error("Speech recognition error:", event.error);
-            };
-
-            recognition.onend = () => {
-                // Keep it running continuously automatically during the session
-                if (socketRef.current?.readyState === WebSocket.OPEN && isActive && !isMuted) {
-                    try {
-                        recognition.start();
-                    } catch (e) { }
-                }
-            };
-
-            (window as any).currentRecognition = recognition;
-            recognition.start();
-
-        } else {
-            console.error("SpeechRecognition is not supported.");
-            alert("Speech Recognition is not supported in this browser. Please use Chrome, Edge, or Safari.");
-        }
     };
 
     const handleIncomingAudio = async (base64Payload: string) => {
@@ -210,13 +165,6 @@ export default function VoiceInterface({ wsUrl, token }: VoiceInterfaceProps) {
             bytes[i] = binaryString.charCodeAt(i);
         }
 
-        // Backend sends 8kHz mu-law or WAV
-        // Let's assume it's the raw bytes from the TTS (which is mu-law or WAV)
-        // Actually, my backend WebVoicePipeline sends base64(audio_chunk) which is what TTS returns.
-        // TTSService returns final bytes (WAV or raw mu-law depending on provider).
-        // Sarvam Bulbul v3 returns raw audio bytes (usually WAV or high-quality PCM).
-
-        // Let's decode as AudioData
         try {
             const audioBuffer = await audioContextRef.current.decodeAudioData(bytes.buffer);
             audioQueue.current.push(audioBuffer);
@@ -253,7 +201,6 @@ export default function VoiceInterface({ wsUrl, token }: VoiceInterfaceProps) {
         audioQueue.current = [];
         isPlaying.current = false;
         setIsAgentSpeaking(false);
-        // Force stop any active web audio nodes would require tracking them
     };
 
     return (
@@ -264,7 +211,7 @@ export default function VoiceInterface({ wsUrl, token }: VoiceInterfaceProps) {
                     <div className="flex items-center gap-3">
                         <div className={`w-3 h-3 rounded-full ${isActive ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
                         <span className="text-sm font-medium text-white/70">
-                            {isActive ? (isAgentSpeaking ? 'AI is speaking...' : 'Listening...') : 'Offline'}
+                            {isActive ? (isAgentSpeaking ? 'AI is speaking...' : 'STT Listening...') : 'Offline'}
                         </span>
                     </div>
 
@@ -277,7 +224,7 @@ export default function VoiceInterface({ wsUrl, token }: VoiceInterfaceProps) {
                                         className={`w-1 bg-primary rounded-full transition-all duration-150 ${isActive && !isMuted ? 'animate-bounce' : 'h-2'
                                             }`}
                                         style={{
-                                            height: isActive && !isMuted ? `${Math.random() * 20 + 10}px` : '4px',
+                                            height: isActive && !isMuted ? `${volume * 100 + 4}px` : '4px',
                                             animationDelay: `${i * 0.1}s`
                                         }}
                                     />
@@ -292,7 +239,7 @@ export default function VoiceInterface({ wsUrl, token }: VoiceInterfaceProps) {
                     {transcript.length === 0 && (
                         <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50">
                             <Waves className="w-12 h-12 text-primary" />
-                            <p className="text-sm">Click "Start Session" to speak with MedVoice AI</p>
+                            <p className="text-sm">Click "Start Session" to speak with Gemini-powered AI</p>
                         </div>
                     )}
                     {transcript.map((item, idx) => (

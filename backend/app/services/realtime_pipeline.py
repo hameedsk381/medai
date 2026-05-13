@@ -4,9 +4,10 @@ import os
 import base64
 import io
 import uuid
+import struct
+import wave
 from datetime import datetime
 from typing import Callable, Optional
-from pydub import AudioSegment
 from .stt_service import STTService
 from .tts_service import TTSService
 from .agent_service import AgentService
@@ -42,12 +43,12 @@ class RealtimeVoicePipeline:
         self.call_sid = None
         self.caller_phone = None
         
-        # Audio silence detection (for Groq STT)
+        # Audio silence detection
         self.silence_timer = None
         self.last_audio_recv_time = 0
         
         # Conversation state
-        self.history = []  # Local cache for immediate access
+        self.history = []
         self.clinic_context = ""
         self.utterance_transcript = ""
         self.is_final = False
@@ -59,18 +60,21 @@ class RealtimeVoicePipeline:
         # Outbound flow
         self.is_outbound = False
         
-        # Sarvam language tracking
-        self.detected_language = "en-IN"  # Default, updated by STT auto-detection
-        self.use_sarvam = bool(os.getenv("SARVAM_API_KEY"))
+        # Language tracking
+        self.detected_language = "en-IN"
 
     @staticmethod
     def get_tool_call_name(tool_call: any) -> str:
-        """Normalize tool-call access across SDK objects and dict payloads."""
+        """Normalize tool-call access across Gemini, OpenAI/Groq SDK objects and dict payloads."""
+        # Gemini format: function_call has .name directly
+        if hasattr(tool_call, "name") and tool_call.name:
+            return str(tool_call.name)
+        # OpenAI/Groq format: tool_call.function.name
         function = getattr(tool_call, "function", None)
         if function and getattr(function, "name", None):
             return str(function.name)
         if isinstance(tool_call, dict):
-            return str(tool_call.get("function", {}).get("name", "unknown_tool"))
+            return str(tool_call.get("name", tool_call.get("function", {}).get("name", "unknown_tool")))
         return "unknown_tool"
 
     async def start(self):
@@ -78,17 +82,16 @@ class RealtimeVoicePipeline:
         # Start STT session
         self.dg_connection = await self.stt.start_session(
             on_transcript=self.on_transcript
-         )
+        )
         
-        # Fetch initial clinic context (Phase 3)
+        # Fetch initial clinic context
         self.clinic_context = await self.knowledge.get_clinic_context(self.business_id)
         
         print(f"✅ Pipeline started for WebSocket session (Context: {len(self.clinic_context)} chars)")
         
         # If outbound, greet immediately after a short stabilization delay
         if self.is_outbound:
-            await asyncio.sleep(1.5) # Wait for stream to stabilize
-            print("👋 Outbound call: Triggering initial greeting...")
+            await asyncio.sleep(1.5)
             await self.handle_agent_turn(
                 "Hello, I am calling from Aura Medical. I see you had an inquiry regarding our services.",
                 persist_user_turn=False
@@ -114,15 +117,13 @@ class RealtimeVoicePipeline:
                 self.silence_timer = asyncio.create_task(self.wait_for_silence())
 
     async def wait_for_silence(self, timeout=1.5):
-        """Wait for silence before triggering transcription (1.5s for Sarvam REST)"""
+        """Wait for silence before triggering transcription"""
         await asyncio.sleep(timeout)
         if self.dg_connection and hasattr(self.dg_connection, 'transcribe_now'):
             await self.dg_connection.transcribe_now()
 
     def on_transcript(self, transcript: str, is_final: bool):
-        """
-        STT callback when speech is transcribed
-        """
+        """STT callback when speech is transcribed"""
         if not transcript.strip():
             return
 
@@ -130,14 +131,12 @@ class RealtimeVoicePipeline:
         self.utterance_transcript = transcript
         self.is_final = is_final
         
-        # INTERRUPTION HANDLING (Phase 4)
-        # If the user speaks while the AI is talking, stop the AI
+        # INTERRUPTION HANDLING
         if self.is_agent_speaking and len(transcript.split()) > 1:
             print("🚀 Interruption detected! Stopping AI speech.")
             self.stop_agent_speech()
         
         if is_final:
-            # Utterance complete, trigger the Agent Brain
             asyncio.create_task(self.handle_agent_turn(transcript))
 
     def stop_agent_speech(self):
@@ -148,7 +147,6 @@ class RealtimeVoicePipeline:
         
         self.is_agent_speaking = False
         
-        # Tell Twilio to clear its queued audio
         if self.stream_sid:
             asyncio.create_task(self.send_clear_to_twilio())
 
@@ -164,22 +162,15 @@ class RealtimeVoicePipeline:
             print(f"❌ Error clearing Twilio buffer: {e}")
 
     async def handle_agent_turn(self, user_text: str, persist_user_turn: bool = True):
-        """
-        Handle one turn of the conversation (Phase 2)
-        1. Query LLM Agent
-        2. Execute tools (appointments, info)
-        3. Synthesize and stream response (TTS)
-        """
-        # 1. Get current history from state service
-        self.history = await self.state.get_history(self.call_sid) if self.call_sid else []
+        """Handle one turn of the conversation"""
+        # 1. Add user message to history
         working_history = list(self.history)
-
-        if user_text.strip():
+        if user_text and user_text.strip() and persist_user_turn:
             working_history.append({"role": "user", "content": user_text})
-            if self.call_sid and persist_user_turn:
+            if self.call_sid:
                 await self.state.add_turn(self.call_sid, "user", user_text)
         
-        # 2. Get LLM response (this might include tool calls)
+        # 2. Get agent response
         agent_resp = await self.agent.process_turn(
             user_text, 
             self.history, 
@@ -192,7 +183,6 @@ class RealtimeVoicePipeline:
                 executor = ToolExecutor(db, self.business_id, caller_phone=self.caller_phone or "Unknown")
                 
                 for tool_call in agent_resp["tool_calls"]:
-                    # Execute tool
                     tool_result = await executor.execute(tool_call)
                     tool_name = self.get_tool_call_name(tool_call)
                     assistant_tool_turn = f"Tool Call: {tool_name}"
@@ -221,21 +211,20 @@ class RealtimeVoicePipeline:
 
         print(f"🤖 Bot: {response_text}")
         
-        # 5. Persistent State Update (Phase 4)
+        # 5. Persistent State Update
         if self.call_sid:
             await self.state.add_turn(self.call_sid, "assistant", response_text)
         
-        # 6. Update detected language from STT (for multilingual response)
+        # 6. Update detected language from STT
         if self.dg_connection and hasattr(self.dg_connection, 'detected_language'):
             lang = str(self.dg_connection.detected_language)
             if lang:
                 self.detected_language = lang
-                print(f"🌍 Detected language for response: {self.detected_language}")
         
         # 7. Synthesize speech to patient (TTS)
         self.tts_task = asyncio.create_task(self.stream_response_to_patient(response_text))
         
-        # 8. AUDIT LOGGING (Phase 4)
+        # 8. Audit logging
         await self.log_interaction("VOICE_TURN", {"user": user_text, "bot": response_text})
 
     async def stream_response_to_patient(self, text: str):
@@ -249,7 +238,7 @@ class RealtimeVoicePipeline:
             self.tts_task = None
 
     async def log_interaction(self, action: str, details: dict):
-        """HIPAA compliant audit logging (Phase 4)"""
+        """HIPAA compliant audit logging"""
         from ..database import AuditLogDB
         try:
             async with AsyncSessionLocal() as db:
@@ -266,39 +255,79 @@ class RealtimeVoicePipeline:
             print(f"❌ Audit Log Error: {e}")
 
     async def trigger_transfer(self, reason: str):
-        """Escalate call to a human receptionist (Phase 4)"""
+        """Escalate call to a human receptionist"""
         print(f"📞 ESCALATING: {reason}")
         await self.log_interaction("HUMAN_TRANSFER", {"reason": reason})
-        # In a real system, you'd send a <Dial> TwiML here or update call via REST API
-        # For this demo, we can send a specialized audio message
         await self.handle_agent_turn("I am connecting you with a human representative now. Please hold.")
+
+    @staticmethod
+    def _pcm16_to_mulaw(pcm_data: bytes) -> bytes:
+        """Convert 16-bit PCM samples to mu-law encoding (ITU-T G.711)."""
+        MULAW_MAX = 0x1FFF
+        MULAW_BIAS = 33
+        result = bytearray()
+        for i in range(0, len(pcm_data), 2):
+            if i + 1 >= len(pcm_data):
+                break
+            sample = struct.unpack_from('<h', pcm_data, i)[0]
+            sign = 0x80 if sample >= 0 else 0
+            if sample < 0:
+                sample = -sample
+            sample = min(sample, MULAW_MAX)
+            sample += MULAW_BIAS
+            exponent = 7
+            for exp_val in [0x4000, 0x2000, 0x1000, 0x0800, 0x0400, 0x0200, 0x0100]:
+                if sample >= exp_val:
+                    break
+                exponent -= 1
+            mantissa = (sample >> (exponent + 3)) & 0x0F
+            mulaw_byte = ~(sign | (exponent << 4) | mantissa) & 0xFF
+            result.append(mulaw_byte)
+        return bytes(result)
 
     async def send_audio_to_twilio(self, wav_data: bytes):
         """
-        Convert WAV/audio to raw mu-law 8kHz and send to Twilio in chunks.
+        Convert WAV audio to raw mu-law 8kHz and send to Twilio in chunks.
+        Pure Python implementation (no pydub/audioop needed).
         """
         if not self.stream_sid or len(wav_data) < 100:
             return
 
         try:
-            # Parse the complete WAV with pydub
-            audio = AudioSegment.from_wav(io.BytesIO(wav_data))
+            # Parse WAV to get raw PCM
+            with wave.open(io.BytesIO(wav_data), 'rb') as wf:
+                src_rate = wf.getframerate()
+                n_channels = wf.getnchannels()
+                sample_width = wf.getsampwidth()
+                pcm_data = wf.readframes(wf.getnframes())
             
-            # Ensure 8kHz mono
-            if audio.frame_rate != 8000:
-                audio = audio.set_frame_rate(8000)
-            audio = audio.set_channels(1)
+            # Downsample if needed (e.g., 24kHz -> 8kHz = keep every 3rd sample)
+            if src_rate != 8000 and src_rate > 0:
+                ratio = src_rate // 8000
+                if ratio > 1:
+                    step = sample_width * n_channels * ratio
+                    frame_size = sample_width * n_channels
+                    downsampled = bytearray()
+                    for i in range(0, len(pcm_data), step):
+                        downsampled.extend(pcm_data[i:i + frame_size])
+                    pcm_data = bytes(downsampled)
             
-            # Export as RAW mu-law (no header!)
-            with io.BytesIO() as out:
-                audio.export(out, format="mulaw")
-                raw_mulaw = out.getvalue()
+            # If stereo, take only left channel
+            if n_channels == 2:
+                mono = bytearray()
+                for i in range(0, len(pcm_data), sample_width * 2):
+                    mono.extend(pcm_data[i:i + sample_width])
+                pcm_data = bytes(mono)
+
+            # Convert PCM to mu-law
+            raw_mulaw = self._pcm16_to_mulaw(pcm_data)
             
             # Send in 160-byte chunks (20ms at 8kHz mu-law)
             chunk_size = 160
             for i in range(0, len(raw_mulaw), chunk_size):
                 chunk = raw_mulaw[i:i + chunk_size]
-                if not chunk: break
+                if not chunk:
+                    break
                     
                 payload = base64.b64encode(chunk).decode('utf-8')
                 media_message = {
@@ -312,13 +341,11 @@ class RealtimeVoicePipeline:
                 if i % 1600 == 0:
                     print(f"📤 Sent {i//160} chunks to Twilio...")
                 
-                # Jitter Buffer Strategy:
-                # - Send first 15 chunks (~300ms) with minimal delay to fill buffer
-                # - Send subsequent chunks at 15ms intervals (faster than real-time 20ms)
+                # Jitter Buffer Strategy
                 if i < 2400:
-                    await asyncio.sleep(0.001) # Quick burst
+                    await asyncio.sleep(0.001)  # Quick burst
                 else:
-                    await asyncio.sleep(0.015) # Stay ahead
+                    await asyncio.sleep(0.015)  # Stay ahead
                 
         except Exception as e:
             print(f"❌ Error transcoding audio for Twilio: {e}")
